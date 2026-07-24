@@ -4,6 +4,9 @@ __pycache__/
 .DS_Store
 *.tmp
 
+# código do MCP: baixado para dentro do workspace no setup (tem git próprio) — não versionar
+/vendor/
+
 # Credenciais NUNCA ficam no repo — a sessão do NotebookLM MCP vive em ~/.notebooklm-mcp-cli/
 # (aqui só por garantia, caso alguém copie algo por engano)
 **/auth.json

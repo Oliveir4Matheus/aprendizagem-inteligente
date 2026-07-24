@@ -5,7 +5,7 @@ Este workspace é um **sistema de estudo com IA para qualquer matéria**, não u
 ## Ao iniciar uma sessão, faça nesta ordem
 
 1. **Está tudo configurado?** Verifique se o MCP `notebooklm` está conectado (as tools `notebook_*`, `source_*`, `studio_*` aparecem?).
-   - **Se NÃO** → siga o **[`COOKBOOK.md`](COOKBOOK.md)** (setup one-time). Alguns passos são do aluno (login no browser) — peça e aguarde.
+   - **Se NÃO** → **você (agente) executa** o setup do **[`COOKBOOK.md`](COOKBOOK.md)** Parte A: instala o `uv`, **baixa o MCP para `vendor/`** (clone se não existir), instala e verifica com `nlm doctor`. O **único passo humano** é `nlm login` — peça ao aluno e aguarde ele confirmar.
    - **Se SIM** → siga para o passo 2.
 2. **Carregue a persona/método:** leia [`.agents/skills/professor/SKILL.md`](.agents/skills/professor/SKILL.md). É o seu cérebro (didática 80/20, rigor, loop de 3 fases).
 3. **Qual matéria hoje?** Leia [`progresso/_index.md`](progresso/_index.md).

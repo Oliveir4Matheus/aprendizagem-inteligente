@@ -8,17 +8,21 @@ Não é um projeto de código: é um **workspace de estudo reutilizável**.
 
 ## ⚡ Quickstart
 
-```bash
-# 1) Configurar o MCP do NotebookLM (uma vez) — abre o browser p/ login
-bash scripts/setup.sh
+O **agente faz o setup** seguindo o `COOKBOOK.md` — você só faz o `nlm login` (browser) quando ele pedir.
 
-# 2) Começar uma matéria
-cp progresso/_TEMPLATE.md progresso/minha-materia.md   # edite materia/fontes
-#    e ponha o PDF/slides em documentos/
+```text
+1) Abra o agente (Antigravity CLI / Claude Code) NESTE diretório e diga:
+   "configure o setup seguindo o COOKBOOK.md"
+   → ele instala o uv, baixa o MCP para ./vendor/ e instala, sozinho.
+   → quando ele pedir, rode você:  nlm login   (conta dedicada)
 
-# 3) Abra o agente (Antigravity CLI / Claude Code) NESTE diretório.
-#    Ele lê o AGENTS.md e conduz o resto. Diga: "siga o AGENTS.md".
+2) "comece a matéria X" — ele copia o _TEMPLATE, registra no _index e pede a fonte.
+   (você põe o PDF/slides em documentos/)
+
+3) "rode o loop de estudo" — PREP → você estuda no NotebookLM → PROGRESS.
 ```
+
+> Alternativa manual: `bash scripts/setup.sh` faz a parte de máquina (tudo menos o `nlm login`).
 
 ## O método (base científica)
 
