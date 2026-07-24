@@ -1,0 +1,10 @@
+# artefatos locais
+__pycache__/
+*.pyc
+.DS_Store
+*.tmp
+
+# Credenciais NUNCA ficam no repo — a sessão do NotebookLM MCP vive em ~/.notebooklm-mcp-cli/
+# (aqui só por garantia, caso alguém copie algo por engano)
+**/auth.json
+**/cookies.json
