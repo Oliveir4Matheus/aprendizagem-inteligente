@@ -26,12 +26,16 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # instalar do CLONE LOCAL (não do PyPI "latest"):
 uv tool install ~/workspace/notebooklm-mcp-audit
 ```
+> Isso expõe os comandos `nlm` e `notebooklm-mcp` em `~/.local/bin`. Se `nlm` não for encontrado, adicione `~/.local/bin` ao PATH ou abra um novo terminal.
+> **Atalho:** `bash scripts/setup.sh` faz A1–A3 de uma vez.
 
 ### A3. [VOCÊ] Autenticar com a conta dedicada
 ```bash
-notebooklm-mcp auth        # abre o Chrome → logue com a CONTA DEDICADA
+nlm login          # abre o Chrome → logue com a CONTA DEDICADA de estudo
+nlm doctor         # diagnóstico: confirma login + instalação
 ```
-> Cookies ficam locais em `~/.notebooklm-mcp-cli/` (permissão `0600`). Duram ~2–4 semanas; quando expirar, repita.
+> O MCP usa o **profile ativo**. `nlm login` sem flag = profile `default` (o server usa esse). Para isolar num profile próprio: `nlm login --profile estudo` e depois `nlm login switch estudo`.
+> Cookies ficam locais em `~/.notebooklm-mcp-cli/` (permissão `0600`). Duram ~2–4 semanas; quando expirar, rode `nlm login` de novo.
 
 ### A4. [AGENTE] Conferir o privilégio mínimo
 Confirme que `.agents/mcp_config.json` mantém os grupos perigosos desligados:
@@ -39,6 +43,8 @@ Confirme que `.agents/mcp_config.json` mantém os grupos perigosos desligados:
 "NOTEBOOKLM_DISABLED_GROUPS": "query_multi,organization,automation,notes,sharing,research"
 ```
 Não reative `sharing` nem `automation`. Se algo estiver diferente, avise antes de mexer.
+
+> ⚠️ Use **este** `.agents/mcp_config.json` do workspace. **Não** rode `nlm setup add` nem `claude mcp add` — eles registram o server sem o bloco `env` de privilégio mínimo (reabririam sharing/automation).
 
 ### A5. [VOCÊ] Verificar no orquestrador
 O agente lê `.agents/mcp_config.json` do workspace. No Antigravity CLI use `/mcp` e confirme o server **`notebooklm` verde**; no Claude Code, `/mcp` também lista. Se vermelho: cheque o entrypoint (`notebooklm-mcp` no PATH), refaça o `auth`, reveja `command`/`args`.
@@ -94,6 +100,7 @@ Estude no NotebookLM: áudio no deslocamento, responda o quiz, tire dúvidas com
 | Sintoma | Causa provável | Ação |
 |---|---|---|
 | `/mcp` mostra "notebooklm" vermelho | binário fora do PATH ou config errado | conferir `command: "notebooklm-mcp"`, reinstalar, recarregar |
-| Tools do NotebookLM não aparecem | auth expirada (2–4 semanas) | rodar `notebooklm-mcp auth` de novo |
+| Tools do NotebookLM não aparecem | auth expirada (2–4 semanas) | rodar `nlm login` de novo |
+| Não sei o que está errado | — | rodar `nlm doctor` (diagnóstico embutido) |
 | Falta uma tool que preciso | grupo desabilitado no config | avaliar se vale reabilitar — **nunca** reative `sharing`/`automation` sem discutir |
 | "Compartilhar" não funciona | é de propósito (least privilege) | manter desligado |

@@ -6,6 +6,20 @@ lá, e o progresso fica registrado aqui — com **repetição espaçada (FSRS)**
 
 Não é um projeto de código: é um **workspace de estudo reutilizável**.
 
+## ⚡ Quickstart
+
+```bash
+# 1) Configurar o MCP do NotebookLM (uma vez) — abre o browser p/ login
+bash scripts/setup.sh
+
+# 2) Começar uma matéria
+cp progresso/_TEMPLATE.md progresso/minha-materia.md   # edite materia/fontes
+#    e ponha o PDF/slides em documentos/
+
+# 3) Abra o agente (Antigravity CLI / Claude Code) NESTE diretório.
+#    Ele lê o AGENTS.md e conduz o resto. Diga: "siga o AGENTS.md".
+```
+
 ## O método (base científica)
 
 Técnicas de estudo com maior evidência (Dunlosky et al. 2013):

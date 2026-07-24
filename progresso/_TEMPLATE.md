@@ -1,8 +1,8 @@
 ---
 # ===== ESTADO (o "save game" — parseável, atualizado a cada passo) =====
 materia: Nome da Matéria
-atualizado: 2026-07-18
-deck_anki: "Faculdade::NomeDaMateria"
+atualizado: 2026-07-24
+deck_anki: "Estudos::NomeDaMateria"
 fontes:
   - documentos/arquivo-de-origem.pdf
 topicos:
@@ -21,7 +21,7 @@ cards_criados: 0
 
 ## Log de aprendizado
 <!-- Uma linha por sessão/marco. Mais recente embaixo. -->
-- 2026-07-18 — O que foi ensinado, como foi o recall, quantos cards.
+- 2026-07-24 — O que foi ensinado, como foi o recall, quantos cards.
 
 ## Notas do 80/20
 <!-- Os ~20% de conceitos que sustentam ~80% da matéria/prova. -->
