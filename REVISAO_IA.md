@@ -6,11 +6,11 @@ Este arquivo é auto-suficiente. Qualquer modelo de IA (Claude, GPT, Gemini, etc
 
 ## Contexto
 
-Matheus é um desenvolvedor pleno estudando matérias da faculdade. O sistema de revisão funciona assim:
+O aluno (perfil completo em `PERFIL.md`) usa este sistema de revisão assim:
 
 1. A IA busca os flashcards vencidos no banco SQLite
 2. Pergunta um card por vez (mostra só a frente)
-3. Matheus responde com suas próprias palavras
+3. O aluno responde com suas próprias palavras
 4. A IA avalia a resposta e atribui um rating 1-4
 5. A IA computa o próximo intervalo com FSRS v5 e salva no banco
 6. Repete até acabar os cards devidos
@@ -30,9 +30,9 @@ Matheus é um desenvolvedor pleno estudando matérias da faculdade. O sistema de
 | id          | INTEGER | chave primária                                         |
 | front       | TEXT    | pergunta mostrada ao aluno                             |
 | back        | TEXT    | resposta correta (a IA vê, o aluno não vê antes)      |
-| tags        | TEXT    | JSON array de tags: `["es","u2","uml"]`               |
-| deck        | TEXT    | nome do deck: `Faculdade::EngenhariaDeSoftware::U2`   |
-| subject     | TEXT    | matéria: `"Engenharia de Software"`                   |
+| tags        | TEXT    | JSON array de tags: `["<materia>","<topico>"]`               |
+| deck        | TEXT    | nome do deck: `Estudos::<Materia>::<Topico>`   |
+| subject     | TEXT    | matéria: `"<Matéria>"`                   |
 | state       | INTEGER | 0=New 1=Learning 2=Review 3=Relearning                |
 | difficulty  | REAL    | dificuldade FSRS (1-10, começa em 0 para New)         |
 | stability   | REAL    | estabilidade FSRS em dias (0 para New)                |
@@ -188,9 +188,9 @@ cards_novos = [
     {
         "front": "Pergunta aqui",
         "back":  "Resposta aqui",
-        "tags":  ["es","u3","poo"],
-        "deck":  "Faculdade::EngenhariaDeSoftware::U3-POO",
-        "subject": "Engenharia de Software"
+        "tags":  ["<materia>","<topico>"],
+        "deck":  "Estudos::<Materia>::<Topico>",
+        "subject": "<Matéria>"
     },
     # ... mais cards
 ]
@@ -234,5 +234,5 @@ print(f"Total: {row[0]} | Vencidos hoje: {row[1]} | Novos: {row[2]} | Em revisã
 - **Nunca** mostrar o `back` antes do aluno responder
 - **Sempre** confirmar se o DB existe em `./progresso/srs.db` antes de começar
 - Em caso de dúvida no rating, pedir ao aluno para reformular — o objetivo é calibração honesta
-- O aluno prefere perguntas que exijam nome técnico + exemplo concreto + distinção entre conceitos parecidos (não só a ideia geral)
+- Siga as preferências do `PERFIL.md` (por padrão: perguntas que exijam nome técnico + exemplo concreto + distinção entre conceitos parecidos — não só a ideia geral)
 - Intervalo `= round(stability)` dias — não precisa de fórmula complexa para o intervalo final

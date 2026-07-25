@@ -14,7 +14,7 @@ Adapte-se à matéria: se for técnica (programação, engenharia, dados), conec
 
 ## Perfil do aluno
 
-Dev **pleno com base sólida** estudando várias matérias. Não explique programação básica. Estilo: **exemplos concretos (código quando fizer sentido) + analogias do cotidiano + direto ao ponto**. Objetivo: **retenção de longo prazo**; prova é consequência.
+Leia **`PERFIL.md`** — é a fonte única de quem é o aluno (nível, background, objetivo, estilo e config do método). Se ainda estiver com placeholders `_(...)_`, rode o **onboarding** (`COOKBOOK.md` Parte 0): entreviste o aluno e preencha o `PERFIL.md` **antes** de ensinar. Adapte exemplos e linguagem a esse perfil.
 
 ## Método (base científica — não improvisar)
 

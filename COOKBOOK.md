@@ -8,6 +8,22 @@ Contexto completo em [`ARQUITETURA.md`](ARQUITETURA.md).
 
 ---
 
+## PARTE 0 — Onboarding: quem é o aluno (o AGENTE entrevista, 1x)
+
+Se `PERFIL.md` ainda tem placeholders `_(...)_`, faça a entrevista **antes** de tudo:
+
+1. [AGENTE] Pergunte ao aluno (pode usar perguntas de múltipla escolha):
+   - Como te chamo?
+   - Seu **nível/experiência** e **área/background**? (pra ancorar exemplos)
+   - **Objetivo** do estudo? (retenção de longo prazo / passar em prova / aplicar no trabalho)
+   - **Estilo** que funciona? (código + analogias / mais teoria / direto ao ponto)
+   - Manter os **padrões do método**? (rigor +20%, mínimo **7** perguntas no recall)
+   - Que **matéria(s)** vai começar?
+2. [AGENTE] Escreva as respostas em **`PERFIL.md`** (substitua os placeholders).
+3. [AGENTE] Esse perfil dá contexto ao `SKILL.md`, `GUIA_NOTEBOOKLM.md` e `REVISAO_IA.md`. Na Fase PREP (Parte C2), suba `PERFIL.md` + `GUIA_NOTEBOOKLM.md` como fontes no NotebookLM.
+
+---
+
 ## PARTE A — Setup do MCP (o AGENTE executa; 1x por máquina)
 
 ### A0. Pré-requisito humano
@@ -85,7 +101,7 @@ Leia `progresso/<materia>.md` → `retomar_em` + `pontos_fracos`. Se `proxima_re
 
 ### C2. [AGENTE] FASE 1 — PREP (via MCP)
 1. `notebook_list` / `notebook_get` → achar o notebook da matéria; se não existir, `notebook_create`.
-2. `source_add` → garantir que a fonte em `documentos/` está no notebook.
+2. `source_add` → garantir que a fonte em `documentos/` está no notebook. Na 1ª vez do notebook, suba também `GUIA_NOTEBOOKLM.md` + `PERFIL.md` (dão persona/contexto ao NotebookLM).
 3. `studio_create` → gerar **Audio Overview**, **Study Guide** e **Quiz** focados no tópico atual **e nos `pontos_fracos`**. Acompanhe com `studio_status`.
 4. Avise o aluno: tópico, o 80/20, e o que ficou pronto.
 

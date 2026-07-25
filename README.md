@@ -1,4 +1,4 @@
-# 🧠 Aprendizado Inteligente
+# 🧠 Aprendizagem Inteligente
 
 Um **sistema de estudo com IA** para **qualquer matéria**. Um agente orquestrador
 (Antigravity CLI ou Claude Code) prepara o material no **NotebookLM**, você estuda
@@ -13,7 +13,8 @@ O **agente faz o setup** seguindo o `COOKBOOK.md` — você só faz o `nlm login
 ```text
 1) Abra o agente (Antigravity CLI / Claude Code) NESTE diretório e diga:
    "configure o setup seguindo o COOKBOOK.md"
-   → ele instala o uv, baixa o MCP para ./vendor/ e instala, sozinho.
+   → na 1ª vez ele te ENTREVISTA (onboarding) e preenche o PERFIL.md.
+   → instala o uv, baixa o MCP para ./vendor/ e instala, sozinho.
    → quando ele pedir, rode você:  nlm login   (conta dedicada)
 
 2) "comece a matéria X" — ele copia o _TEMPLATE, registra no _index e pede a fonte.
@@ -55,6 +56,7 @@ aprendizado-inteligente/
 ├── AGENTS.md            ← entrada auto-lida pelo agente
 ├── COOKBOOK.md          ← setup do MCP + como operar o loop
 ├── ARQUITETURA.md       ← mapa das peças
+├── PERFIL.md            ← quem é o aluno (preenchido no onboarding)
 ├── GUIA_NOTEBOOKLM.md   ← persona + método (e fonte pro NotebookLM)
 ├── REVISAO_IA.md        ← SQLs + FSRS da revisão interativa
 ├── .agents/

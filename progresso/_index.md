@@ -15,6 +15,6 @@ ledgers são o território.
 
 <!--
 Exemplo de linha preenchida:
-| Engenharia de Software | em_andamento | 3/5 tópicos | [engenharia-de-software.md](engenharia-de-software.md) |
+| Nome da Matéria | em_andamento | 3/5 tópicos | [nome-da-materia.md](nome-da-materia.md) |
 Status: nao_iniciada | em_andamento | revisao | concluida
 -->

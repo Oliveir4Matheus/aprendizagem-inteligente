@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "notebooklm": {
-      "command": "/home/matheuso/.local/bin/notebooklm-mcp",
+      "command": "notebooklm-mcp",
       "args": [],
       "env": {
         "NOTEBOOKLM_DISABLED_GROUPS": "query_multi,organization,automation,notes,sharing,research",
