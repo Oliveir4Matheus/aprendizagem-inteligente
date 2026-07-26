@@ -19,6 +19,13 @@ CREATE TABLE IF NOT EXISTS cards (
     created_at  TEXT    NOT NULL
 );
 
+-- review_log guarda, além do resultado, o CONTEXTO em que a resposta aconteceu.
+-- As quatro últimas colunas existem por dois motivos distintos:
+--   · confianca  → calibração metacognitiva: o aluno previu antes de saber o resultado?
+--   · tentativas e usou_dica → tornam a nota auditável. São fatos objetivos ao lado de
+--     um julgamento subjetivo; se a proporção de notas altas subir sem que as dicas
+--     caiam, alguma coisa afrouxou na avaliação e isso fica visível.
+--   · tipo_item  → mede se as cotas de intercalação e transferência estão sendo cumpridas.
 CREATE TABLE IF NOT EXISTS review_log (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     card_id       INTEGER NOT NULL,
@@ -29,6 +36,10 @@ CREATE TABLE IF NOT EXISTS review_log (
     stability     REAL,
     difficulty    REAL,
     state         INTEGER,
+    confianca     INTEGER,          -- 0 = não vou acertar · 1 = mais ou menos · 2 = vou acertar
+    tentativas    INTEGER,          -- quantas vezes o aluno tentou antes de fechar
+    usou_dica     INTEGER,          -- 0 | 1 — dica limita a nota a 2
+    tipo_item     TEXT,             -- recall | intercalado | sintese | transferencia | portao
     FOREIGN KEY(card_id) REFERENCES cards(id)
 );
 
@@ -54,3 +65,4 @@ CREATE TABLE IF NOT EXISTS study_sessions (
 CREATE INDEX IF NOT EXISTS idx_due ON cards(due_date, state);
 CREATE INDEX IF NOT EXISTS idx_sessao_inicio ON study_sessions(inicio);
 CREATE INDEX IF NOT EXISTS idx_sessao_aberta ON study_sessions(fim);
+CREATE INDEX IF NOT EXISTS idx_log_data ON review_log(review_date);

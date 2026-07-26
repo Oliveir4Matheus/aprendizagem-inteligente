@@ -236,12 +236,34 @@ Ele imprime o horário de cada bloco e pausa e sai do caminho — não há conta
 **No retorno, o agente pergunta uma coisa só:** *"me diga um conceito que você não conseguiria explicar agora"*. Placar e detalhe saem do recall da Fase 3 — pedir relatório na porta de entrada só reduz a chance de o aluno voltar.
 
 ### C4. [AGENTE] FASE 3 — PROGRESS
+
 1. **Recall em cloze progressivo**, no mínimo o nº de perguntas do perfil (padrão 7), com o tamanho de lacuna do nível de rigor. Dica rebaixa a questão um nível e limita o rating a 2.
+
+   **Composição por cotas** — a partir da etapa 3, não podem ser 7 perguntas da etapa atual:
+
+   | Cota | Tipo | De onde sai |
+   |---|---|---|
+   | 3 | `recall` | conceitos da etapa atual |
+   | 2 | `intercalado` | etapas dominadas, via `conecta_com` do roadmap |
+   | 1 | `sintese` | combina a etapa atual com uma anterior |
+   | 1 | `transferencia` | mesmo conceito, superfície nova |
+
+   Etapas 1 e 2: 5 `recall` + 2 `transferencia`. Detalhe em `METODOS_DE_ENSINO.md` §5 e §6.
+
+   **Antes de revelar cada resposta, pergunte a confiança** (`vou acertar` / `mais ou menos` / `não vou acertar`) e registre. Ao fim, devolva o desencontro em uma linha.
 2. Atualize o **ledger** (`Edit`): `topicos[].status`, `passo_loop`, `retomar_em`; **todo erro vira `pontos_fracos`**.
 3. Atualize o **FSRS** em `estudo/progresso/srs.db` (`REVISAO_IA.md`): rating 1–4, novo intervalo, `cards` + `review_log`; crie cards dos erros (sem duplicar pelo `front`).
-4. Atualize o **roadmap** (`etapa_atual`, status da etapa) e o `_index.md`.
+4. Atualize o **roadmap** (`etapa_atual`, status da etapa) e o `_index.md`. A etapa só vira `dominada` se passar no **portão N4** — 2 itens de cenário aberto, sem dica.
 5. Linha nova no `## Log de aprendizado`, atualize `atualizado:` e `ultima_sessao:`, e **limpe `fase2_iniciada_em:`** — a Fase 2 se fechou.
-6. Etapa dominada → gere o **badge** `estudo/progresso/jornada_do_heroi.jpg` e atualize `estudo/JORNADA.md`.
+6. Etapa dominada → **prévia estruturante** do que vem (2-3 frases, via `prepara_para`), gere o **badge** `estudo/progresso/jornada_do_heroi.jpg` e atualize `estudo/JORNADA.md`.
+
+**Relatórios de acompanhamento:**
+
+```bash
+python3 scripts/status.py --calibracao    # o aluno sabe o que não sabe?
+python3 scripts/status.py --fila          # fila de hoje, intercalada por tópico
+python3 scripts/status.py --performance   # tempo cruzado com retenção
+```
 
 ### C5. Modo reentrada — quando o aluno volta depois de sumir
 

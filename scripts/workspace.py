@@ -31,11 +31,41 @@ FASE2_EXPIRA = 7      # dias: a partir daqui assume-se que o consumo não vai ac
 # ── banco ──────────────────────────────────────────────────────────────────
 
 
-def abrir_db(criar: bool = True) -> sqlite3.Connection:
-    """Abre o srs.db aplicando o esquema de forma idempotente.
+#: Colunas acrescentadas ao review_log depois da versão inicial do esquema.
+#: `CREATE TABLE IF NOT EXISTS` não altera tabela existente, então elas precisam
+#: de ALTER explícito — é isto que migra o banco de quem já usava o sistema.
+COLUNAS_NOVAS = {
+    "review_log": {
+        "confianca": "INTEGER",
+        "tentativas": "INTEGER",
+        "usou_dica": "INTEGER",
+        "tipo_item": "TEXT",
+    },
+}
 
-    Aplicar sempre é o que migra bancos antigos (todo CREATE é IF NOT EXISTS),
-    então quem já usava o sistema ganha a tabela de sessões sem fazer nada.
+
+def _migrar(con: sqlite3.Connection) -> list[str]:
+    aplicadas = []
+    for tabela, colunas in COLUNAS_NOVAS.items():
+        existe = con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (tabela,)
+        ).fetchone()
+        if not existe:
+            continue
+        atuais = {r["name"] for r in con.execute(f"PRAGMA table_info({tabela})")}
+        for coluna, tipo in colunas.items():
+            if coluna not in atuais:
+                con.execute(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {tipo}")
+                aplicadas.append(f"{tabela}.{coluna}")
+    if aplicadas:
+        con.commit()
+    return aplicadas
+
+
+def abrir_db(criar: bool = True) -> sqlite3.Connection:
+    """Abre o srs.db aplicando o esquema e as migrações de forma idempotente.
+
+    Quem já usava o sistema ganha as tabelas e colunas novas sem fazer nada.
     """
     if not DB.exists() and not criar:
         raise FileNotFoundError(f"banco não encontrado: {DB}")
@@ -45,7 +75,42 @@ def abrir_db(criar: bool = True) -> sqlite3.Connection:
     if SCHEMA.exists():
         con.executescript(SCHEMA.read_text(encoding="utf-8"))
         con.commit()
+    _migrar(con)
     return con
+
+
+# ── calibração e composição do recall ──────────────────────────────────────
+
+#: Probabilidade que cada resposta de confiança declara implicitamente.
+#: Usada para medir o desencontro entre o que o aluno previu e o que aconteceu.
+CONFIANCA = {0: ("não vou acertar", 0.20), 1: ("mais ou menos", 0.50), 2: ("vou acertar", 0.85)}
+
+#: Composição do recall a partir da etapa 3 (antes disso não há material anterior
+#: suficiente para intercalar). Somam o mínimo de perguntas definido no PERFIL.
+COTAS = {"recall": 3, "intercalado": 2, "sintese": 1, "transferencia": 1}
+COTAS_INICIAIS = {"recall": 5, "transferencia": 2}
+PORTAO_MIN_N4 = 2   # itens em formato N4, sem dica, para marcar a etapa como dominada
+
+
+def fila_intercalada(cards: list) -> list:
+    """Reordena a fila para alternar tópicos em vez de agrupá-los.
+
+    Mesma quantidade de trabalho, distribuída de forma a forçar discriminação:
+    o aluno precisa decidir QUAL conceito se aplica, em vez de responder no piloto
+    automático porque só existe um em jogo.
+    """
+    grupos: dict[str, list] = {}
+    for c in cards:
+        chave = (c["deck"] if isinstance(c, sqlite3.Row) else c.get("deck")) or "—"
+        grupos.setdefault(chave, []).append(c)
+    # maiores grupos primeiro, para que o rodízio não termine com um bloco só
+    ordem = sorted(grupos.values(), key=len, reverse=True)
+    saida = []
+    while any(ordem):
+        for g in ordem:
+            if g:
+                saida.append(g.pop(0))
+    return saida
 
 
 # ── frontmatter ────────────────────────────────────────────────────────────

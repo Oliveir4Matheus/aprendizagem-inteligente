@@ -1,0 +1,78 @@
+sequenceDiagram
+    autonumber
+    actor Aluno
+    participant M as MNEMO (agente)
+    participant WS as Workspace (estudo/)
+    participant MCP as MCP notebooklm
+    participant NLM as NotebookLM
+    participant SRS as srs.db (FSRS)
+
+    Aluno->>M: abre o agente no diretório
+    M->>WS: PASSO ZERO — scripts/status.py
+    WS-->>M: estado + próximo passo (fase2 / reentrada / revisão / loop)
+    alt modo reentrada disparado
+        Note over M,SRS: 10+ dias ausente ou backlog acima de 15
+        M->>SRS: buscarReentrada(teto=8) ordenado por MAIOR estabilidade
+        M->>Aluno: 8 cards, dica antecipada, zero conteúdo novo
+        M->>Aluno: oferece espalhar o backlog restante
+        Aluno-->>M: autoriza ou não
+    end
+    M->>WS: lê PERFIL.md
+    alt PERFIL com placeholders
+        M->>Aluno: entrevista de onboarding (passos 9-20)
+        Aluno-->>M: método, postura, rigor, idioma, artefatos
+        M->>WS: grava PERFIL.md
+    end
+    M->>WS: lê _index.md, ledger e roadmap
+    M->>SRS: buscarVencidos(hoje)
+    SRS-->>M: N cards vencidos
+
+    alt há revisão vencida
+        M->>Aluno: revisão FSRS primeiro (cloze)
+        Aluno-->>M: respostas
+        M->>SRS: gravarRevisao(card, rating)
+    end
+
+    Note over M,WS: FASE 1 — PREP
+    M->>WS: conceitosDaEtapaAtual() do roadmap
+    M->>WS: recorta a fonte -> documentos/<materia>-<etapa>.md
+    M->>MCP: notebook_create / notebook_get
+    MCP->>NLM: cria ou abre o notebook
+    M->>MCP: source_add(recorte + PERFIL.md + GUIA_NOTEBOOKLM.md)
+    loop para cada artefato padrão do PERFIL
+        M->>MCP: studio_create(tipo, focusPrompt=conceitos, idioma)
+        MCP->>NLM: gera o artefato
+        M->>MCP: studio_status(id)
+        MCP-->>M: concluído
+    end
+    M->>Aluno: etapa, 80/20, artefatos prontos + prompt calibrado
+    M->>WS: grava fase2_iniciada_em
+
+    Note over Aluno,NLM: FASE 2 — STUDY (o agente não conduz, mas não some)
+    Aluno->>M: "iniciar"
+    M->>SRS: sessao.py iniciar — abre study_sessions
+    SRS-->>Aluno: horário de cada bloco e pausa
+    Aluno->>NLM: ouve o áudio, responde o quiz, tira dúvidas
+    NLM-->>Aluno: respostas com citação
+    Aluno->>M: "terminei"
+    M->>SRS: sessao.py fim — duração + o que ficou
+    M->>Aluno: um conceito que você não conseguiria explicar agora?
+
+    Note over M,SRS: FASE 3 — PROGRESS
+    loop mínimo N perguntas (PERFIL)
+        M->>Aluno: cloze no tamanho do nível de rigor
+        Aluno-->>M: completa a lacuna
+        alt pediu dica
+            M->>Aluno: devolve contexto (rebaixa um nível)
+            Note right of M: rating limitado a 2
+        end
+        M->>M: avalia -> rating 1..4
+    end
+    M->>SRS: gravarRevisao + criarCard(erros)
+    M->>WS: ledger (status, retomar_em, pontos_fracos)
+    M->>WS: ultima_sessao = hoje · LIMPA fase2_iniciada_em
+    M->>WS: roadmap (etapa_atual) e _index.md
+    alt etapa dominada
+        M->>WS: gera badge jornada_do_heroi.jpg + JORNADA.md
+        M->>Aluno: 🏆 etapa concluída
+    end

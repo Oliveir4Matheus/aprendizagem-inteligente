@@ -246,14 +246,132 @@ def performance() -> int:
     return 0
 
 
+def calibracao() -> int:
+    """O aluno sabe o que ele não sabe?
+
+    Compara o que ele PREVIU antes de saber o resultado com o que aconteceu. É a
+    única métrica aqui que fala sobre a capacidade do aluno de se julgar — que é
+    justamente o que ele precisa levar embora quando o tutor não estiver mais lá.
+    """
+    con = ws.abrir_db()
+    linhas = con.execute("""
+        SELECT confianca, COUNT(*) n,
+               SUM(CASE WHEN rating >= 3 THEN 1 ELSE 0 END) acertos
+        FROM review_log WHERE confianca IS NOT NULL
+        GROUP BY confianca ORDER BY confianca DESC
+    """).fetchall()
+    sem = con.execute("SELECT COUNT(*) FROM review_log WHERE confianca IS NULL").fetchone()[0]
+
+    mnemo.rule(" CALIBRAÇÃO METACOGNITIVA ")
+    print()
+    if not linhas:
+        print(f"  {mnemo.dim('Nenhuma previsão registrada ainda.')}")
+        print(f"  {mnemo.dim('O tutor deve perguntar a confiança ANTES de revelar cada resposta.')}")
+        if sem:
+            print(f"  {mnemo.dim(f'({sem} revisões antigas sem previsão — normal, é anterior a esta regra.)')}")
+        print()
+        return 0
+
+    print(f"  {'você previu':<20}{'itens':>7}{'acertou':>9}{'previsto':>10}{'real':>8}{'desvio':>9}")
+    print(f"  {mnemo.dim('─' * 63 if mnemo._UNICODE else '-' * 63)}")
+    # Dois números, não um. Erro e viés medem coisas diferentes e um esconde o outro:
+    # somar desvios com sinal faz o excesso numa faixa cancelar a falta em outra, e
+    # um aluno mal calibrado nos dois sentidos apareceria como bem calibrado.
+    soma_abs = soma_sinal = total = 0.0
+    for r in linhas:
+        rotulo, p = ws.CONFIANCA.get(r["confianca"], ("?", 0.5))
+        real = r["acertos"] / r["n"]
+        desvio = real - p
+        cor = mnemo.green if abs(desvio) <= 0.10 else (mnemo.yellow if abs(desvio) <= 0.25 else mnemo.red)
+        print(f"  {rotulo:<20}{r['n']:>7}{r['acertos']:>9}{p * 100:>9.0f}%{real * 100:>7.0f}%"
+              f"{cor(f'{desvio * 100:>+8.0f}%')}")
+        soma_abs += abs(desvio) * r["n"]
+        soma_sinal += (p - real) * r["n"]
+        total += r["n"]
+    print(f"  {mnemo.dim('─' * 63 if mnemo._UNICODE else '-' * 63)}")
+
+    erro = soma_abs / total          # magnitude: o quanto você erra ao se julgar
+    vies = soma_sinal / total        # direção: para que lado você erra
+
+    cor_e = mnemo.green if erro <= 0.10 else (mnemo.yellow if erro <= 0.20 else mnemo.red)
+    rotulo_e = "preciso" if erro <= 0.10 else ("impreciso" if erro <= 0.20 else "muito impreciso")
+    print(f"  {mnemo.bold('Erro de calibração:')} {cor_e(f'{erro * 100:.0f}% — {rotulo_e}')}"
+          f"   {mnemo.dim('(o quanto sua previsão erra, em qualquer direção)')}")
+
+    if vies > 0.08:
+        cor_v, rotulo_v = mnemo.red, "excesso de confiança"
+        recado = ("Você tende a achar que sabe mais do que sabe. É o viés mais comum e o mais "
+                  "caro: leva a parar de revisar cedo demais, justamente no que ainda não firmou.")
+    elif vies < -0.08:
+        cor_v, rotulo_v = mnemo.yellow, "confiança baixa demais"
+        recado = ("Você sabe mais do que acha. Custa tempo revisando o que já está firme e "
+                  "desgasta a motivação sem necessidade.")
+    else:
+        cor_v, rotulo_v = mnemo.green, "sem viés claro"
+        recado = "Você não pende sistematicamente para nenhum lado."
+    print(f"  {mnemo.bold('Viés:')}               {cor_v(f'{vies * 100:+.0f}% — {rotulo_v}')}"
+          f"   {mnemo.dim('(para que lado você erra)')}")
+    print()
+    if erro > 0.20 and abs(vies) <= 0.08:
+        recado = ("Atenção: seu viés parece pequeno porque os erros se cancelam — você erra "
+                  "muito para os dois lados. Isso é pior que um viés consistente, porque não "
+                  "há uma correção simples: sua sensação de saber está pouco relacionada ao "
+                  "que você de fato sabe.")
+    for pedaco in _quebrar(recado, 72):
+        print(f"  {mnemo.dim(pedaco)}")
+    print()
+
+    piores = con.execute("""
+        SELECT c.front, l.review_date FROM review_log l JOIN cards c ON c.id = l.card_id
+        WHERE l.confianca = 2 AND l.rating <= 2 ORDER BY l.review_date DESC LIMIT 5
+    """).fetchall()
+    if piores:
+        print(f"  {mnemo.bold('Onde você errou estando confiante')} "
+              f"{mnemo.dim('— é aqui que mora o que você não sabe que não sabe:')}")
+        for p in piores:
+            print(f"    {mnemo.dim('·')} {p['front'][:66]}")
+        print()
+    con.close()
+    return 0
+
+
+def fila() -> int:
+    """A fila de revisão de hoje, já reordenada para alternar tópicos."""
+    con = ws.abrir_db()
+    hoje = date.today().isoformat()
+    cards = con.execute(
+        "SELECT * FROM cards WHERE due_date <= ? ORDER BY state DESC, due_date ASC LIMIT 40",
+        (hoje,),
+    ).fetchall()
+    if not cards:
+        print("nenhum card vencido hoje")
+        return 0
+    ordenada = ws.fila_intercalada(cards)
+    print(f"{len(ordenada)} cards · ordem intercalada (alterna tópicos para forçar discriminação)\n")
+    anterior = None
+    for i, c in enumerate(ordenada, 1):
+        deck = c["deck"] or "—"
+        marca = " " if deck != anterior else mnemo.yellow("↑ mesmo tópico seguido")
+        print(f"  {i:>2}. [{deck[:38]:<38}] {c['front'][:44]}  {marca}")
+        anterior = deck
+    con.close()
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Estado do estudo e o que fazer agora.")
     ap.add_argument("--json", action="store_true", help="saída estruturada")
     ap.add_argument("--performance", action="store_true", help="tempo cruzado com retenção")
+    ap.add_argument("--calibracao", action="store_true", help="previsão do aluno x resultado real")
+    ap.add_argument("--fila", action="store_true", help="fila de hoje, intercalada por tópico")
     args = ap.parse_args()
 
     if args.performance:
         return performance()
+    if args.calibracao:
+        return calibracao()
+    if args.fila:
+        return fila()
 
     d = coletar()
     if args.json:

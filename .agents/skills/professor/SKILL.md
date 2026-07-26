@@ -113,8 +113,9 @@ Dispara com 10+ dias sem sessão **ou** backlog acima de 15 cards. A sessão de 
 ### Fase 1 — PREP (você faz, via MCP NotebookLM)
 
 1. Leia o ledger: `retomar_em` (etapa + próxima ação) e `pontos_fracos`.
-2. Abra o **roadmap** e extraia a **lista de conceitos obrigatórios da etapa atual** + o que está **fora de escopo**. Essa lista é o trilho de tudo que vem a seguir.
+2. Abra o **roadmap** e extraia três coisas da etapa atual: a **lista de conceitos obrigatórios**, o que está **fora de escopo**, e os campos **`conecta_com`** e **`prepara_para`**. Os dois últimos são o que impede as etapas de virarem silos.
 3. Defina o **80/20 da etapa** — os poucos conceitos que puxam o resto.
+   **Abra amarrando no que já foi dominado.** Antes do conteúdo novo, uma ou duas frases usando o `conecta_com`: *"isto é o mesmo mecanismo do \<conceito da etapa 2\>, aplicado a outra coisa"* ou *"cuidado: parece o \<conceito X\>, mas o critério é oposto"*. Conhecimento novo gruda no que já existe; sem a amarra, ele fica solto.
 4. **Recorte a fonte.** Não suba o arquivo bruto completo (`estudo/documentos/<livro>.pdf`) como source. Extraia dele **só o conteúdo da etapa atual** e salve em `estudo/documentos/<materia>-<etapa>.md` — curado, no idioma do perfil, organizado pelos conceitos obrigatórios. É esse `.md` que vira source. Isso mantém os artefatos focados e impede a IA de vazar para etapas futuras.
 5. Via ferramentas do MCP `notebooklm`:
    - Garanta que existe um notebook da matéria; se não, crie-o.
@@ -152,20 +153,60 @@ Ele consome no NotebookLM (áudio no deslocamento, quiz, Q&A com citação). Voc
 
    **Dica:** existe em todos os níveis. Ela nunca entrega a resposta — **devolve contexto**, rebaixando a questão um nível (N4→N3, N3→N2, N2→N1). Quando ela entra depende do nível: N1 ao primeiro sinal de hesitação, N2 após 1 tentativa, N3 e N4 após 2.
 
-   Cubra **todos** os conceitos obrigatórios da etapa e insista nos `pontos_fracos` do ledger.
+   **Composição das 7 perguntas** — não podem ser 7 da etapa atual. A partir da **etapa 3**:
+
+   | Cota | Tipo | De onde sai |
+   |---|---|---|
+   | 3 | `recall` | conceitos obrigatórios da etapa atual |
+   | 2 | `intercalado` | conceitos de etapas **já dominadas**, escolhidos pelo `conecta_com` do roadmap — formule exigindo que o aluno **decida qual dos dois se aplica** |
+   | 1 | `sintese` | exige **combinar** a etapa atual com uma anterior. É o quebra-cabeça fechando |
+   | 1 | `transferencia` | mesmo conceito, **superfície nova**: um caso de outro domínio, outro setor, outra escala |
+
+   Nas **etapas 1 e 2** não há material anterior suficiente: use 5 `recall` + 2 `transferencia`.
+
+   > **Por que a cota existe.** Sete perguntas seguidas sobre a etapa atual não treinam discriminação — só há um conceito em jogo, então o aluno acerta no piloto automático. E o nível 3 de rigor cobra justamente distinguir conceitos parecidos. A cota é o que faz a prova bater com o treino.
+
+   **Pergunte a confiança ANTES de revelar qualquer coisa.** A cada item, antes do veredito:
+
+   ```
+   Antes de eu te dizer: você acha que acertou essa?
+     (a) vou acertar   (b) mais ou menos   (c) não vou acertar
+   ```
+
+   Isso não é formalidade — é a única parte do protocolo que treina o aluno a **julgar o próprio conhecimento**, que é o que ele vai precisar fazer sozinho quando você não estiver. Registre a resposta.
 
 2. **Avalie e atribua rating 1–4** por conceito, com a severidade do nível de rigor. Regra fixa em qualquer nível: **acerto após dica vale no máximo rating 2** — lembrou com apoio, não sozinho.
+
+   Ao gravar em `review_log`, preencha **sempre** `confianca`, `tentativas`, `usou_dica` e `tipo_item`. As três primeiras são fatos objetivos ao lado de um julgamento seu — é o que permite detectar depois se a avaliação afrouxou.
+
+2b. **Devolva o desencontro, ao fim do recall.** Uma linha, sem sermão:
+
+   > *"Você previu acerto em 6 e acertou 4. Nos dois que errou, estava confiante — e os dois eram sobre \<tema\>. É aí que mora o que você não sabe que não sabe."*
+
+   Relatório acumulado: `python3 scripts/status.py --calibracao`.
 3. Atualize o **ledger** (`Edit`, não reescreva o arquivo): `topicos[].status`, `passo_loop`, `retomar_em`, e **todo erro vira item em `pontos_fracos`**.
 4. Atualize o **FSRS** em `estudo/progresso/srs.db` seguindo `REVISAO_IA.md`: para cada card revisado grave em `cards` + `review_log`. Crie cards novos dos pontos-chave e dos erros (sem duplicar pelo `front`).
-5. Atualize o **roadmap**: marque a etapa como `dominada` quando o critério fechar, e mova `etapa_atual`.
+5. Atualize o **roadmap**: mova `etapa_atual` e marque a etapa como `dominada` **só se ela passar no portão**.
+
+   > **O portão N4.** O dia a dia roda no nível de rigor do perfil (padrão N3). Para fechar uma etapa, porém, o aluno precisa passar em **pelo menos 2 itens no formato N4** — cenário aberto, resposta sustentada sob contestação — **sem dica**. Rigor alto o tempo todo produz principalmente fracasso, porque transferência distante logo após a aquisição é cedo demais; rigor alto **no portão** garante que "dominado" signifique alguma coisa. Registre esses itens com `tipo_item = 'portao'`.
+   >
+   > Não passou no portão: a etapa continua `em_andamento`, o que falhou vira `pontos_fracos`, e o FSRS traz de volta. Não é reprovação — é o critério fazendo o trabalho dele.
 6. Adicione uma linha em `## Log de aprendizado` (data + o que rolou + recall + nº de cards). Atualize `atualizado:`, **`ultima_sessao:`**, e **limpe `fase2_iniciada_em:`** — a Fase 2 se fechou. Atualize o `_index.md`.
-7. **Badge de conquista.** A cada etapa dominada, gere/atualize `estudo/progresso/jornada_do_heroi.jpg` em estilo certificado, adequado para postar no LinkedIn: percentual de progresso, todas as etapas do roadmap, os conceitos conquistados na etapa recém-fechada e as etapas futuras marcadas como pendentes. Atualize também `estudo/JORNADA.md`.
+7. **Prévia estruturante.** Fechada a etapa, apresente em **2 a 3 frases** o que vem, usando o `prepara_para` do roadmap — e diga **como o que ele acabou de aprender é pré-requisito daquilo**.
+
+   > *"Na próxima etapa entra \<conceito\>. Ele depende diretamente do \<conceito que você acabou de fechar\>, porque \<motivo\>. Não vou ensinar agora — só quero que você saiba onde isso vai encaixar."*
+
+   **Isto é apresentação, não aula.** Não explique o conceito futuro, não dê exemplo, e **nunca cobre no recall** algo que ainda não foi ensinado. A função é dar ao aluno um lugar pronto para pendurar o próximo conteúdo — o esqueleto antes do detalhe. Serve também de fecho de sessão: o aluno sai sabendo por que valeu a pena.
+
+8. **Badge de conquista.** A cada etapa dominada, gere/atualize `estudo/progresso/jornada_do_heroi.jpg` em estilo certificado, adequado para postar no LinkedIn: percentual de progresso, todas as etapas do roadmap, os conceitos conquistados na etapa recém-fechada e as etapas futuras marcadas como pendentes. Atualize também `estudo/JORNADA.md`.
 
 ---
 
 ## Regras
 
-- **Um conceito por vez.** Não avance enquanto o anterior não fechar no recall.
+- **Um conceito por vez** ao **ensinar**. Ao **testar**, misture: a cota de intercalação e síntese é obrigatória a partir da etapa 3.
+- **Pergunte a confiança antes de revelar.** Sempre. É o único passo que treina o aluno a se avaliar.
+- **Nunca cobre no recall o que só foi apresentado na prévia.** Prévia é esqueleto, não conteúdo.
 - **Puxe o recall antes de dar a resposta.** Não entregue de bandeja.
 - **Respeite a trave de segurança do método** (`METODOS_DE_ENSINO.md` §1). Socrático sem progresso em 3 perguntas vira frustração — caia para o método de apoio.
 - **Nunca ultrapasse o escopo da etapa atual do roadmap**, nem em artefato, nem em explicação, nem em pergunta.

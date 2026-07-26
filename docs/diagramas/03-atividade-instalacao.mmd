@@ -1,0 +1,20 @@
+flowchart TD
+    Start([Aluno abre o agente]) --> A0[/Agente lê AGENTS.md/]
+    A0 --> Q1{PERFIL.md existe<br/>e está completo?}
+
+    Q1 -- não --> S1[Passos 1-8: scripts/setup.py<br/>uv · clone · auditoria · pin<br/>estudo/ · privilégio mínimo]
+    S1 --> S2{Sessão do Google<br/>já é válida?}
+    S2 -- não --> S3[Passo 8: abre o navegador<br/>aluno autentica]
+    S3 --> S4{nlm doctor<br/>confirma?}
+    S4 -- não --> S3
+    S4 -- sim --> S5
+    S2 -- sim --> S5[Passos 9-21: entrevista<br/>método · postura · rigor<br/>idioma · artefatos · ritmo]
+    S5 --> S6[/Grava estudo/PERFIL.md/]
+    S6 --> Q2
+
+    Q1 -- sim --> Q2{MCP conectado?}
+    Q2 -- não --> S1
+    Q2 -- sim --> Fim([Pronto para o ciclo de estudo])
+
+    classDef decisao fill:#e67e22,stroke:#d35400,color:#fff;
+    class Q1,Q2,S2,S4 decisao

@@ -229,7 +229,97 @@ que ele já teve.
 
 ---
 
-## 4. Como o agente combina tudo
+## 4. Calibração metacognitiva
+
+> O aluno sabe o que ele **não** sabe?
+
+Um tutor pode corrigir cada resposta com precisão e ainda assim devolver ao mundo alguém que continua sem saber avaliar o próprio conhecimento. Para um autodidata isso é fatal: é ele quem decide o que revisar, quando parar e quando avançar — e toma todas essas decisões pela **sensação de saber**, que é mal calibrada e enviesada para cima justamente no conteúdo estudado em bloco.
+
+**A regra:** antes de revelar qualquer resposta, o tutor pergunta a previsão.
+
+```
+Antes de eu te dizer: você acha que acertou essa?
+  (a) vou acertar   (b) mais ou menos   (c) não vou acertar
+```
+
+A previsão vai para `review_log.confianca` (2 / 1 / 0) ao lado da nota real. Ao fim do recall, o tutor **devolve o desencontro em uma linha** — sem sermão:
+
+> *"Você previu acerto em 6 e acertou 4. Nos dois que errou, estava confiante — e os dois eram sobre \<tema\>."*
+
+O relatório acumulado sai em `python3 scripts/status.py --calibracao`, com **dois números que medem coisas diferentes**:
+
+| Número | O que diz | Por que separado |
+|---|---|---|
+| **Erro de calibração** | o quanto a previsão erra, em qualquer direção | é a magnitude do problema |
+| **Viés** | para que lado ela erra | é a direção, e sugere a correção |
+
+Manter os dois é necessário: somar desvios com sinal faz o excesso numa faixa cancelar a falta em outra, e um aluno que erra 25% para cima e 30% para baixo apareceria como bem calibrado. **Erro alto com viés perto de zero é o pior caso** — não há correção simples, porque a sensação de saber tem pouca relação com o que se sabe.
+
+**O item mais valioso do relatório** é a lista de acertos previstos que deram errado: é exatamente ali que mora o que o aluno não sabe que não sabe.
+
+---
+
+## 5. Integração cumulativa — as etapas não são silos
+
+O roadmap é sequencial para impedir que o material vaze para etapas futuras. Sem contrapeso, isso produz **prática em blocos**: um tema até dominar, depois o próximo. Bloco dá sensação de fluência e entrega retenção pior — especialmente na capacidade de **discriminar** conceitos parecidos, que é justamente o que o nível 3 de rigor cobra.
+
+O contrapeso tem três peças, e cada uma resolve um problema diferente:
+
+### 5.1 Amarra retrospectiva — ao ensinar
+
+Antes do conteúdo novo, uma ou duas frases ligando ao que já foi dominado, usando o campo `conecta_com` do roadmap:
+
+> *"Isto é o mesmo mecanismo do \<conceito da etapa 2\>, aplicado a outra coisa."*
+> *"Cuidado: parece o \<conceito X\>, mas o critério é oposto."*
+
+Conhecimento novo gruda no que já existe. Sem a amarra, ele fica solto — e conteúdo solto é o primeiro a sumir.
+
+### 5.2 Cotas no recall — ao testar
+
+**É aqui que a intercalação de verdade acontece.** Exposição não intercala; só a **recuperação sob competição** intercala, porque é ela que obriga o aluno a decidir *qual* conceito se aplica. A partir da etapa 3, as perguntas se dividem:
+
+| Cota | Tipo | De onde sai |
+|---|---|---|
+| 3 | `recall` | conceitos obrigatórios da etapa atual |
+| 2 | `intercalado` | etapas já dominadas, escolhidas pelo `conecta_com` — formuladas para o aluno **decidir qual dos dois se aplica** |
+| 1 | `sintese` | exige **combinar** a etapa atual com uma anterior |
+| 1 | `transferencia` | ver seção 6 |
+
+Etapas 1 e 2 não têm material anterior: 5 `recall` + 2 `transferencia`.
+
+Os itens intercalados saem do `conecta_com` e **não de sorteio**. Conceito antigo aleatório treina discriminação genérica; conceito que o roadmap declara como vizinho, oposto ou confundível treina a estrutura que o aluno precisa. Ao escrever o roadmap, prefira conexões de **contraste** — "é o oposto de", "costuma ser confundido com" — às de mera vizinhança temática.
+
+A fila de revisão do FSRS também é reordenada para alternar tópicos em vez de agrupá-los (`scripts/status.py --fila`): mesma quantidade de trabalho, distribuída de modo a forçar discriminação.
+
+### 5.3 Prévia estruturante — ao fechar
+
+Fechada a etapa, o tutor apresenta em 2–3 frases o que vem, usando o `prepara_para`, e diz **por que o que acabou de ser aprendido é pré-requisito daquilo**.
+
+**É apresentação, não aula.** Não se explica o conceito futuro, não se dá exemplo, e **nunca se cobra no recall** o que só apareceu na prévia. A função é dar ao aluno um lugar pronto para pendurar o próximo conteúdo — o esqueleto antes do detalhe.
+
+> As três peças respondem a coisas distintas: **5.1** dá contexto, **5.2** treina discriminação, **5.3** prepara a chegada. Só a 5.2 é intercalação no sentido técnico; as outras duas são organização do conhecimento. Confundi-las leva a achar que basta mostrar temas futuros para ter os ganhos da intercalação — e não basta, porque não há o que recuperar em algo que ainda não foi aprendido.
+
+---
+
+## 6. Transferência — e o portão N4
+
+O padrão de rigor (N3) exige nome técnico, exemplo e distinção contra o conceito vizinho. Tudo isso acontece **dentro da linguagem do domínio**. Ancorar o exemplo no contexto de trabalho do aluno ajuda a fixar, mas não é transferência: é elaboração no mesmo contexto em que ele codificou.
+
+**Transferência é aplicar o conceito a um caso de superfície diferente** — outro setor, outra escala, outro domínio — onde o aluno precisa reconhecer a estrutura profunda por baixo de uma aparência que não combina com nenhum exemplo que ele viu.
+
+Duas engrenagens tratam disso:
+
+**A cota de transferência** (seção 5.2): ao menos 1 das perguntas de todo recall, em qualquer etapa, é um caso novo. Não depende do nível de rigor — é obrigação fixa.
+
+**O portão N4**: o dia a dia roda no nível do perfil, mas para marcar uma etapa como `dominada` o aluno precisa passar em **no mínimo 2 itens no formato N4, sem dica** — cenário aberto, resposta sustentada sob contestação.
+
+> **Por que não subir tudo para N4.** Transferência distante logo após a aquisição produz principalmente fracasso: o esquema ainda não consolidou, e o aluno conclui que o problema é ele. Rigor alto **no portão** sobe a barra exatamente onde ela decide alguma coisa — no significado da palavra "dominado" — sem transformar cada pergunta do dia em uma banca.
+
+Não passou no portão, a etapa continua `em_andamento`, o que falhou vira `pontos_fracos` e o FSRS traz de volta. Não é reprovação; é o critério fazendo o trabalho dele.
+
+---
+
+## 7. Como o agente combina tudo
 
 Na hora de ensinar, a `SKILL.md` monta o comportamento assim:
 

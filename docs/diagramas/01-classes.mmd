@@ -1,0 +1,182 @@
+classDiagram
+    direction TB
+
+    class AgenteOrquestrador {
+        +String nome
+        +iniciarSessao()
+        +rodarOnboarding()
+        +proporRoadmap(fonte) Roadmap
+        +fase1_prep(etapa)
+        +fase3_progress(respostas)
+    }
+
+    class Perfil {
+        +String comoChamar
+        +String background
+        +String metodoPrincipal
+        +String metodoApoio
+        +String posturaDominante
+        +int nivelRigor
+        +String idioma
+        +List~String~ artefatosPadrao
+        +int minPerguntasRecall
+    }
+
+    class MetodoDeEnsino {
+        <<abstract>>
+        +String chave
+        +executarRoteiro(conceito)
+        +traveDeSeguranca() bool
+    }
+    class Socratico
+    class InstrucaoDireta
+    class ExemplosTrabalhados
+    class BaseadoEmProblema
+    class DescobertaGuiada
+    class Mastery
+
+    class NivelDeRigor {
+        +int nivel
+        +int dok
+        +String tamanhoLacuna
+        +int tentativasAteDica
+        +avaliar(resposta, usouDica) int
+    }
+
+    class Postura {
+        +String chave
+        +aplicarTom(mensagem) String
+    }
+
+    class Roadmap {
+        +String materia
+        +int etapaAtual
+        +List~Etapa~ etapas
+        +conceitosDaEtapaAtual() List~String~
+    }
+    class Etapa {
+        +String nome
+        +List~String~ conceitosObrigatorios
+        +List~String~ foraDeEscopo
+        +String status
+    }
+
+    class Ledger {
+        +String materia
+        +List~Topico~ topicos
+        +RetomarEm retomarEm
+        +List~String~ pontosFracos
+        +int rigorOverride
+    }
+
+    class SRS {
+        +Path db
+        +buscarVencidos(hoje) List~Card~
+        +buscarReentrada(teto) List~Card~
+        +gravarRevisao(card, rating)
+        +criarCard(front, back)
+    }
+
+    class StatusDaSessao {
+        +int cardsVencidos
+        +int fase2Dias
+        +int diasSemSessao
+        +bool reentrada
+        +decidirProximoPasso() Acao
+    }
+
+    class SessaoEstudo {
+        +String materia
+        +String tipo
+        +DateTime inicio
+        +DateTime fim
+        +int duracaoMin
+        +int blocoMin
+        +int blocosFeitos
+        +String absorvido
+    }
+
+    class Ritmo {
+        +int blocoMin
+        +int pausaMin
+        +int pausaLongaMin
+        +int blocosAtePausaLonga
+        +int blocosAlvo
+    }
+    class Card {
+        +String front
+        +String back
+        +int state
+        +float difficulty
+        +float stability
+        +Date dueDate
+    }
+
+    class MCPNotebookLM {
+        +List~String~ gruposDesabilitados
+        +notebook_create(titulo) Notebook
+        +source_add(arquivo)
+        +studio_create(tipo, focusPrompt, idioma) Artefato
+        +studio_status(id) String
+    }
+    class Notebook {
+        +String id
+        +List~Source~ sources
+    }
+    class Source {
+        +String tipo
+        +String origem
+    }
+    class Artefato {
+        +String tipo
+        +String focusPrompt
+        +String idioma
+        +String status
+    }
+
+    class Setup {
+        +int TOTAL_STEPS
+        +rodarPassos1a8()
+    }
+    class AuditorMCP {
+        +String pinAtual
+        +auditar(base, alvo) List~Achado~
+        +aplicar(alvo, aprovado) bool
+    }
+
+    MetodoDeEnsino <|-- Socratico
+    MetodoDeEnsino <|-- InstrucaoDireta
+    MetodoDeEnsino <|-- ExemplosTrabalhados
+    MetodoDeEnsino <|-- BaseadoEmProblema
+    MetodoDeEnsino <|-- DescobertaGuiada
+    MetodoDeEnsino <|-- Mastery
+
+    AgenteOrquestrador --> Perfil : lê primeiro
+    Perfil --> MetodoDeEnsino : resolve principal e apoio
+    Perfil --> Postura : resolve tom
+    Perfil --> NivelDeRigor : resolve severidade
+    Ledger ..> NivelDeRigor : sobrescreve por matéria
+
+    Perfil --> Ritmo : resolve blocos de foco
+    AgenteOrquestrador --> StatusDaSessao : PASSO ZERO de toda sessão
+    StatusDaSessao --> Ledger : lê fase2_iniciada_em, ultima_sessao
+    StatusDaSessao --> SRS : lê backlog e atraso
+    StatusDaSessao ..> SessaoEstudo : detecta sessão aberta
+    SRS "1" *-- "0..*" SessaoEstudo
+    SessaoEstudo --> Ritmo : usa
+
+    AgenteOrquestrador --> Ledger : lê e escreve
+    AgenteOrquestrador --> Roadmap : extrai conceitos da etapa
+    AgenteOrquestrador --> SRS : agenda e grava
+    AgenteOrquestrador --> MCPNotebookLM : opera
+
+    Roadmap "1" *-- "4..8" Etapa
+    Ledger "1" --> "1" Roadmap : aponta
+    SRS "1" *-- "0..*" Card
+    MCPNotebookLM --> Notebook
+    Notebook "1" *-- "1..*" Source
+    Notebook "1" *-- "0..*" Artefato
+    Etapa ..> Artefato : conceitos viram focusPrompt
+
+    Setup --> AuditorMCP : passo 4
+    AuditorMCP --> MCPNotebookLM : pina o commit

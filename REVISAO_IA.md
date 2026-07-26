@@ -139,6 +139,15 @@ N3  a lacuna é uma justificativa inteira, ancorada no contexto real do aluno
 N4  só o cenário é dado; a lacuna é o diagnóstico completo + defesa sob contestação
 ```
 
+### 2b. Perguntar a confiança — ANTES de revelar
+
+```
+Antes de eu te dizer: você acha que acertou essa?
+  (a) vou acertar   (b) mais ou menos   (c) não vou acertar
+```
+
+Guarde em `confianca` como **2 / 1 / 0**. Este passo não é formalidade: é a única parte do protocolo que treina o aluno a **julgar o próprio conhecimento** — a competência que ele vai precisar exercer sozinho quando não houver tutor. Sem previsão registrada não há como medir calibração depois.
+
 ### 3. Aguardar resposta do aluno
 
 O aluno completa a lacuna com as próprias palavras.
@@ -232,12 +241,19 @@ conn.execute(
     (new_state, nd, ns, next_due, today_s, lapses, card["id"])
 )
 conn.execute(
-    "INSERT INTO review_log(card_id,review_date,rating,elapsed_days,"
-    "interval_days,stability,difficulty,state) VALUES(?,?,?,?,?,?,?,?)",
-    (card["id"], today_s, rating, elapsed, interval, ns, nd, new_state)
+    "INSERT INTO review_log(card_id,review_date,rating,elapsed_days,interval_days,"
+    "stability,difficulty,state,confianca,tentativas,usou_dica,tipo_item) "
+    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+    (card["id"], today_s, rating, elapsed, interval, ns, nd, new_state,
+     CONFIANCA,      # 2 = vou acertar · 1 = mais ou menos · 0 = não vou acertar
+     TENTATIVAS,     # quantas vezes tentou antes de fechar
+     USOU_DICA,      # 0 | 1
+     TIPO_ITEM)      # recall | intercalado | sintese | transferencia | portao
 )
 conn.commit()
 ```
+
+> **As quatro últimas colunas não são opcionais.** `confianca` alimenta o relatório de calibração. `tentativas` e `usou_dica` são **fatos objetivos ao lado de um julgamento subjetivo**: se a proporção de notas 3 e 4 subir ao longo do tempo sem que o uso de dica caia, a avaliação afrouxou — e essa é a única forma de perceber. `tipo_item` mede se as cotas de intercalação e transferência estão sendo cumpridas de verdade.
 
 ### 7. Feedback ao aluno
 
@@ -303,6 +319,54 @@ print(f"Total: {row[0]} | Vencidos hoje: {row[1]} | Novos: {row[2]} | Em revisã
 ```
 
 ---
+
+---
+
+## Fila intercalada — a ordem importa
+
+```bash
+python3 scripts/status.py --fila
+```
+
+A fila padrão (`ORDER BY state DESC, due_date ASC`) tende a **agrupar** cards do mesmo tópico, porque cards do mesmo tópico foram criados juntos e vencem juntos. Isso é prática em bloco: o aluno responde no piloto automático, porque só existe um conceito em jogo.
+
+A fila intercalada faz rodízio entre os decks, alternando tópicos. **Mesma quantidade de trabalho**, distribuída de forma a obrigar o aluno a decidir *qual* conceito se aplica — que é o que treina discriminação.
+
+```python
+import sys; sys.path.insert(0, 'scripts')
+import workspace as ws
+
+cards = conn.execute(
+    "SELECT * FROM cards WHERE due_date <= ? ORDER BY state DESC, due_date ASC LIMIT 20",
+    (today,)
+).fetchall()
+cards = ws.fila_intercalada(cards)   # rodízio entre decks
+```
+
+> Exceção: em **modo reentrada** a ordem é por maior estabilidade (§1b). Ali o objetivo é reacender o hábito, e empilhar dificuldade em cima de quem já está fragilizado pela ausência é o caminho errado.
+
+---
+
+## Calibração: o aluno sabe o que não sabe?
+
+```bash
+python3 scripts/status.py --calibracao
+```
+
+Cruza a **previsão** do aluno (§2b) com o resultado real, e devolve **dois números que medem coisas diferentes**:
+
+| Número | O que diz |
+|---|---|
+| **Erro de calibração** | o quanto a previsão erra, em qualquer direção (magnitude) |
+| **Viés** | para que lado ela erra — excesso ou falta de confiança (direção) |
+
+Manter os dois separados é necessário: somar desvios com sinal faz o excesso numa faixa cancelar a falta em outra, e um aluno que erra 25% para cima e 30% para baixo apareceria como bem calibrado. **Erro alto com viés perto de zero é o pior caso** — não há correção simples, porque a sensação de saber tem pouca relação com o que se sabe.
+
+O relatório termina listando os **acertos previstos que deram errado**. É a lista mais importante do sistema: ali mora o que o aluno não sabe que não sabe.
+
+Ao fim de cada recall, devolva o desencontro em uma linha, sem sermão:
+
+> *"Você previu acerto em 6 e acertou 4. Nos dois que errou, estava confiante — e os dois eram sobre \<tema\>."*
 
 ---
 

@@ -1,0 +1,66 @@
+flowchart TD
+    ST[/PASSO ZERO<br/>python3 scripts/status.py/] --> D0{Qual o próximo passo<br/>que o script apontou?}
+
+    D0 -- reentrada --> RE[MODO REENTRADA<br/>teto de 8 cards · maior estabilidade primeiro<br/>dica antecipada · zero conteúdo novo]
+    RE --> RE2{Espalhar o backlog<br/>restante?}
+    RE2 -- só com autorização --> RE3[/Reagenda due_date<br/>e registra no log/]
+    RE2 -- não --> End
+    RE3 --> End
+
+    D0 -- fase2 pendente --> W
+    D0 -- revisão vencida --> R2[Revisão espaçada primeiro<br/>fila intercalada por tópico]
+    D0 -- sem matéria --> N1
+    D0 -- seguir o loop --> R1
+    R2 --> R1
+
+    N1[Aluno põe a fonte<br/>em estudo/documentos/] --> N2[Agente propõe roadmap<br/>etapas · conceitos · conexões]
+    N2 --> N3{Aluno aprova<br/>o roadmap?}
+    N3 -- não --> N2
+    N3 -- sim --> N4[/Grava roadmap + ledger<br/>e registra no _index/]
+    N4 --> R1
+
+    R1[FASE 1 — PREP] --> P1[Extrai conceitos da etapa<br/>+ conecta_com + prepara_para]
+    P1 --> P1b[Amarra no que já foi dominado<br/>antes do conteúdo novo]
+    P1b --> P2[Recorta a fonte para<br/>documentos/materia-etapa.md]
+    P2 --> P3[source_add: recorte + PERFIL + GUIA]
+    P3 --> P4[studio_create de cada artefato<br/>focusPrompt = conceitos da etapa]
+    P4 --> P5[/Avisa o aluno + prompt calibrado<br/>grava fase2_iniciada_em/]
+
+    P5 --> F2[FASE 2 — STUDY<br/>aluno consome no NotebookLM]
+    F2 --> T1{Aluno disse<br/>iniciar?}
+    T1 -- sim --> T2[sessao.py iniciar<br/>blocos de foco do PERFIL]
+    T1 -- não --> W
+    T2 --> W{Aluno voltou?}
+    W -- não, passou de 3 dias --> V1[status.py aponta fase2<br/>pendente na próxima sessão]
+    W -- não, passou de 7 dias --> V2[status.py declara expirada:<br/>recall assim mesmo ou regenerar]
+    V1 --> F3
+    V2 --> F3
+    W -- sim --> T3[sessao.py fim<br/>duração + o que ficou]
+    T3 --> F3[FASE 3 — PROGRESS]
+
+    F3 --> C1[Monta o recall por COTAS<br/>3 etapa atual · 2 intercalado<br/>1 síntese · 1 transferência]
+    C1 --> G0[/Pergunta a CONFIANÇA<br/>antes de revelar/]
+    G0 --> G1[Cloze no tamanho<br/>do nível de rigor]
+    G1 --> G2{Pediu dica?}
+    G2 -- sim --> G3[Devolve contexto<br/>rating limitado a 2]
+    G2 -- não --> G4
+    G3 --> G4[Avalia: rating 1-4<br/>grava confiança · tentativas · dica]
+    G4 --> G5{Cobriu as cotas?}
+    G5 -- não --> G0
+    G5 -- sim --> G5b[/Devolve o desencontro:<br/>previu 6, acertou 4/]
+    G5b --> G6[/Grava FSRS · ledger · roadmap · log<br/>ultima_sessao · LIMPA fase2_iniciada_em/]
+
+    G6 --> G7{Passou no PORTÃO?<br/>2 itens N4 sem dica}
+    G7 -- não --> G8[Etapa segue em_andamento<br/>falhas viram pontos_fracos]
+    G7 -- sim --> G9[Etapa dominada · badge · JORNADA<br/>PRÉVIA ESTRUTURANTE do que vem]
+    G8 --> End
+    G9 --> End([Fim da sessão])
+
+    classDef decisao fill:#e67e22,stroke:#d35400,color:#fff;
+    classDef fase fill:#2ecc71,stroke:#27ae60,color:#fff;
+    classDef alerta fill:#8C2F1F,stroke:#6d2417,color:#fff;
+    classDef meta fill:#4A5E86,stroke:#33456b,color:#fff;
+    class D0,N3,W,T1,G2,G5,G7,RE2 decisao
+    class R1,F2,F3 fase
+    class RE,V2 alerta
+    class G0,G5b,C1 meta
