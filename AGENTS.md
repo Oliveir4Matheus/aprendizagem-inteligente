@@ -93,6 +93,9 @@ Se o aluno disser algo do tipo *"da próxima vez faça X"*, *"não gere Y"*, *"p
 | `scripts/mnemo.py` | Barra de progresso, ASCII do tutor e utilitários de terminal |
 | `scripts/workspace.py` | Leitura do ledger/perfil/banco, compartilhada pelos scripts |
 | `templates/` | Modelos copiados para `estudo/` no setup |
+| `docs/MANUAL.md` | Referência completa: fundamentos, evidência, operação, pontos em aberto |
+| `docs/diagramas/` | Diagramas em PNG + fontes `.mmd` |
+| `docs/avaliacoes/` | Pareceres de qualidade de aprendizagem e de usabilidade |
 
 ### Conteúdo — ignorado (`estudo/`)
 

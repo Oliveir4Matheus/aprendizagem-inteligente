@@ -85,6 +85,11 @@ O tutor não é genérico — ele é **configurado no onboarding**:
 
 Catálogo completo em [`METODOS_DE_ENSINO.md`](METODOS_DE_ENSINO.md).
 
+> 📖 **Quer entender o sistema por inteiro?** O [**Manual**](docs/MANUAL.md) cobre como ele
+> funciona, como está estruturado, **por que cada decisão foi tomada e qual evidência a sustenta**,
+> como operá-lo — e a Parte VII lista os pontos em aberto com as consultas SQL prontas para você
+> investigar por conta própria.
+
 **O recall é em texto lacunado** (cloze progressivo): o tutor escreve o parágrafo e você
 completa. A lacuna encolhe conforme o rigor — no nível 4 sobra só o cenário e a lacuna é
 o diagnóstico inteiro. Dica existe em todos os níveis; ela devolve contexto em vez de
