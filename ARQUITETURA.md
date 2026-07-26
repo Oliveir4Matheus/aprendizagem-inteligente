@@ -131,8 +131,36 @@ classDiagram
     class SRS {
         +Path db
         +buscarVencidos(hoje) List~Card~
+        +buscarReentrada(teto) List~Card~
         +gravarRevisao(card, rating)
         +criarCard(front, back)
+    }
+
+    class StatusDaSessao {
+        +int cardsVencidos
+        +int fase2Dias
+        +int diasSemSessao
+        +bool reentrada
+        +decidirProximoPasso() Acao
+    }
+
+    class SessaoEstudo {
+        +String materia
+        +String tipo
+        +DateTime inicio
+        +DateTime fim
+        +int duracaoMin
+        +int blocoMin
+        +int blocosFeitos
+        +String absorvido
+    }
+
+    class Ritmo {
+        +int blocoMin
+        +int pausaMin
+        +int pausaLongaMin
+        +int blocosAtePausaLonga
+        +int blocosAlvo
     }
     class Card {
         +String front
@@ -188,6 +216,14 @@ classDiagram
     Perfil --> NivelDeRigor : resolve severidade
     Ledger ..> NivelDeRigor : sobrescreve por matéria
 
+    Perfil --> Ritmo : resolve blocos de foco
+    AgenteOrquestrador --> StatusDaSessao : PASSO ZERO de toda sessão
+    StatusDaSessao --> Ledger : lê fase2_iniciada_em, ultima_sessao
+    StatusDaSessao --> SRS : lê backlog e atraso
+    StatusDaSessao ..> SessaoEstudo : detecta sessão aberta
+    SRS "1" *-- "0..*" SessaoEstudo
+    SessaoEstudo --> Ritmo : usa
+
     AgenteOrquestrador --> Ledger : lê e escreve
     AgenteOrquestrador --> Roadmap : extrai conceitos da etapa
     AgenteOrquestrador --> SRS : agenda e grava
@@ -227,6 +263,15 @@ sequenceDiagram
     participant SRS as srs.db (FSRS)
 
     Aluno->>M: abre o agente no diretório
+    M->>WS: PASSO ZERO — scripts/status.py
+    WS-->>M: estado + próximo passo (fase2 / reentrada / revisão / loop)
+    alt modo reentrada disparado
+        Note over M,SRS: 10+ dias ausente ou backlog acima de 15
+        M->>SRS: buscarReentrada(teto=8) ordenado por MAIOR estabilidade
+        M->>Aluno: 8 cards, dica antecipada, zero conteúdo novo
+        M->>Aluno: oferece espalhar o backlog restante
+        Aluno-->>M: autoriza ou não
+    end
     M->>WS: lê PERFIL.md
     alt PERFIL com placeholders
         M->>Aluno: entrevista de onboarding (passos 9-20)
@@ -256,11 +301,17 @@ sequenceDiagram
         MCP-->>M: concluído
     end
     M->>Aluno: etapa, 80/20, artefatos prontos + prompt calibrado
+    M->>WS: grava fase2_iniciada_em
 
-    Note over Aluno,NLM: FASE 2 — STUDY (o agente não age)
+    Note over Aluno,NLM: FASE 2 — STUDY (o agente não conduz, mas não some)
+    Aluno->>M: "iniciar"
+    M->>SRS: sessao.py iniciar — abre study_sessions
+    SRS-->>Aluno: horário de cada bloco e pausa
     Aluno->>NLM: ouve o áudio, responde o quiz, tira dúvidas
     NLM-->>Aluno: respostas com citação
-    Aluno->>M: "terminei — travei em X"
+    Aluno->>M: "terminei"
+    M->>SRS: sessao.py fim — duração + o que ficou
+    M->>Aluno: um conceito que você não conseguiria explicar agora?
 
     Note over M,SRS: FASE 3 — PROGRESS
     loop mínimo N perguntas (PERFIL)
@@ -274,6 +325,7 @@ sequenceDiagram
     end
     M->>SRS: gravarRevisao + criarCard(erros)
     M->>WS: ledger (status, retomar_em, pontos_fracos)
+    M->>WS: ultima_sessao = hoje · LIMPA fase2_iniciada_em
     M->>WS: roadmap (etapa_atual) e _index.md
     alt etapa dominada
         M->>WS: gera badge jornada_do_heroi.jpg + JORNADA.md
@@ -304,30 +356,46 @@ flowchart TD
 
     Q1 -- sim --> Q2{MCP conectado?}
     Q2 -- não --> S1
-    Q2 -- sim --> Q3{Já existe matéria<br/>no _index.md?}
+    Q2 -- sim --> ST[/PASSO ZERO<br/>python3 scripts/status.py/]
 
-    Q3 -- não --> N1[Aluno põe a fonte<br/>em estudo/documentos/]
+    ST --> D0{Qual o próximo passo<br/>que o script apontou?}
+    D0 -- reentrada --> RE[MODO REENTRADA<br/>teto de 8 cards · maior estabilidade primeiro<br/>dica antecipada · zero conteúdo novo]
+    RE --> RE2{Espalhar o backlog<br/>restante?}
+    RE2 -- só com autorização --> RE3[/Reagenda due_date<br/>e registra no log/]
+    RE2 -- não --> End
+    RE3 --> End
+
+    D0 -- fase2 pendente --> W
+    D0 -- revisão vencida --> R2[Revisão espaçada primeiro<br/>cloze + rating + novo intervalo]
+    D0 -- sem matéria --> N1
+    D0 -- seguir o loop --> R1
+    R2 --> R1
+
+    N1[Aluno põe a fonte<br/>em estudo/documentos/]
     N1 --> N2[Agente propõe roadmap<br/>4 a 8 etapas + conceitos]
     N2 --> N3{Aluno aprova<br/>o roadmap?}
     N3 -- não --> N2
     N3 -- sim --> N4[/Grava roadmap + ledger<br/>e registra no _index/]
     N4 --> R1
 
-    Q3 -- sim --> R0{Há card vencido<br/>no FSRS?}
-    R0 -- sim --> R2[Revisão espaçada primeiro<br/>cloze + rating + novo intervalo]
-    R2 --> R1
-    R0 -- não --> R1
-
     R1[FASE 1 — PREP] --> P1[Extrai conceitos<br/>da etapa atual]
     P1 --> P2[Recorta a fonte para<br/>documentos/materia-etapa.md]
     P2 --> P3[source_add: recorte<br/>+ PERFIL + GUIA]
     P3 --> P4[studio_create de cada artefato<br/>focusPrompt = conceitos da etapa]
     P4 --> P5[/Avisa o aluno + entrega<br/>o prompt calibrado/]
+    P5 --> P6[/Grava fase2_iniciada_em<br/>no ledger/]
 
-    P5 --> F2[FASE 2 — STUDY<br/>aluno consome no NotebookLM]
-    F2 --> W{Aluno voltou?}
-    W -- não --> W
-    W -- sim --> F3[FASE 3 — PROGRESS]
+    P6 --> F2[FASE 2 — STUDY<br/>aluno consome no NotebookLM]
+    F2 --> T1{Aluno disse<br/>iniciar?}
+    T1 -- sim --> T2[sessao.py iniciar<br/>blocos de foco do PERFIL]
+    T1 -- não --> W
+    T2 --> W{Aluno voltou?}
+    W -- não, e passou de 3 dias --> V1[status.py aponta<br/>fase2 pendente na próxima sessão]
+    W -- não, e passou de 7 dias --> V2[status.py declara expirada:<br/>recall assim mesmo ou regenerar]
+    V1 --> F3
+    V2 --> F3
+    W -- sim --> T3[sessao.py fim<br/>grava duração + o que ficou]
+    T3 --> F3[FASE 3 — PROGRESS]
 
     F3 --> G1[Recall em cloze progressivo<br/>no tamanho do nível de rigor]
     G1 --> G2{Pediu dica?}
@@ -336,7 +404,7 @@ flowchart TD
     G3 --> G4[Avalia: rating 1-4]
     G4 --> G5{Cobriu o mínimo<br/>de perguntas?}
     G5 -- não --> G1
-    G5 -- sim --> G6[/Grava FSRS · ledger<br/>roadmap · log/]
+    G5 -- sim --> G6[/Grava FSRS · ledger · roadmap · log<br/>atualiza ultima_sessao<br/>LIMPA fase2_iniciada_em/]
 
     G6 --> G7{Etapa dominada?}
     G7 -- não --> G8[Reforça pontos fracos<br/>na próxima sessão]
@@ -346,15 +414,26 @@ flowchart TD
 
     classDef decisao fill:#e67e22,stroke:#d35400,color:#fff;
     classDef fase fill:#2ecc71,stroke:#27ae60,color:#fff;
-    class Q1,Q2,Q3,S2,S4,N3,R0,W,G2,G5,G7 decisao
+    classDef alerta fill:#8C2F1F,stroke:#6d2417,color:#fff;
+    class Q1,Q2,S2,S4,N3,D0,W,T1,G2,G5,G7,RE2 decisao
     class R1,F2,F3 fase
+    class RE,V2 alerta
 ```
+
+> **Por que o passo zero é um script e não uma instrução.** O gatilho da Fase 2 abandonada e o modo reentrada são exatamente o tipo de verificação que um agente com o contexto cheio deixa de fazer — e a falha é silenciosa, porque ninguém sente falta de uma checagem que não aconteceu. Tirando a decisão da memória do agente e colocando numa saída de terminal, ela passa a acontecer mesmo quando ele está distraído.
 
 ---
 
 ## 5. O loop de 3 fases (resumo textual)
 
 ```
+  PASSO ZERO  (script, antes de qualquer coisa)
+  ─────────────────────────────────────────────────────────────
+  python3 scripts/status.py
+      → cards vencidos · Fase 2 aberta há N dias · dias sem sessão
+      → decide: reentrada | fase2 pendente | revisão | loop
+      (o agente segue o que o script apontar, não o que ele lembrar)
+
   FASE 1 — PREP  (agente faz, sozinho)
   ─────────────────────────────────────────────────────────────
   lê ledger → retomar_em + pontos_fracos
@@ -374,14 +453,21 @@ flowchart TD
 
   FASE 2 — STUDY  (VOCÊ faz)
   ─────────────────────────────────────────────────────────────
+  você diz "iniciar" → sessao.py cronometra em blocos de foco
   NotebookLM: áudio no deslocamento · quiz · dúvidas com citação
-  (agente espera seu retorno)
+  você volta → sessao.py fim
+      │
+      ▼  se você NÃO voltar:
+  3 dias  → a próxima sessão COMEÇA por aqui
+  7 dias  → o material é dado como não consumido
+            (recall assim mesmo, ou regenerar)
 
   FASE 3 — PROGRESS  (agente faz, escrevendo no workspace)
   ─────────────────────────────────────────────────────────────
   recall em cloze progressivo, no mínimo N perguntas (PERFIL)
       │
       ├─► ledger: status, retomar_em, pontos_fracos
+      ├─► ledger: ultima_sessao ← hoje · fase2_iniciada_em ← vazio
       ├─► srs.db: rating 1-4 + FSRS → próxima data
       ├─► roadmap: etapa_atual + status da etapa
       ├─► cards novos (dos erros) + linha no Log
@@ -399,6 +485,8 @@ flowchart TD
 | Peça | Papel | Por que é ela |
 |---|---|---|
 | **Agente orquestrador** | Conduz o loop, lê/escreve arquivos | Agente com acesso ao workspace |
+| **`scripts/status.py`** | Passo zero: decide por onde a sessão começa | Gatilho que **não** pode depender da memória do agente |
+| **`scripts/sessao.py`** | Cronômetro em blocos de foco | Tempo medido por relógio, não por estimativa de conversa |
 | **`SKILL.md`** | O "cérebro": persona, 80/20, as 3 fases | Instruções que o agente segue |
 | **`METODOS_DE_ENSINO.md`** | Roteiro de cada método, escala de rigor, posturas | O *como ensinar* configurável |
 | **`PERFIL.md`** | Resolve método/postura/rigor/idioma em runtime | Fonte única de configuração |

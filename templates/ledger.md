@@ -2,6 +2,8 @@
 # ===== ESTADO (o "save game" — parseável, atualizado a cada passo) =====
 materia: Nome da Matéria
 atualizado: AAAA-MM-DD
+ultima_sessao: AAAA-MM-DD       # última vez que o aluno de fato estudou (alimenta o modo reentrada)
+fase2_iniciada_em:              # data em que o material foi entregue; limpe ao fechar a Fase 3
 deck_anki: "Estudos::NomeDaMateria"
 roadmap: estudo/progresso/<materia>-roadmap.md   # trilha da matéria (gerada no início, aprovada por você)
 fontes:

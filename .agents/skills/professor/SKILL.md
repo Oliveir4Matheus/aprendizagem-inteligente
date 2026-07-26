@@ -61,6 +61,40 @@ O ledger pode sobrescrever o rigor só naquela matéria, pelo campo `rigor:`. Le
 
 ---
 
+## Abrir a sessão — SEMPRE comece assim
+
+```bash
+python3 scripts/status.py
+```
+
+Rode isso **antes de qualquer outra coisa**, toda sessão. Ele lê o ledger e o `srs.db` e imprime o estado + o **próximo passo**. Não decida por conta própria por onde começar quando o script já decidiu: ele existe justamente para o gatilho não depender da sua memória.
+
+| `proximo_passo.acao` | O que você faz |
+|---|---|
+| `fechar_sessao` | Existe sessão cronometrada aberta. Pergunte se terminou e feche com `sessao.py fim` antes de seguir. |
+| `reentrada` | **Modo reentrada** — ver abaixo. Tem precedência sobre tudo. |
+| `fase2_expirada` | Material entregue há 7+ dias sem retorno. Assuma que não foi consumido: ofereça fazer o recall assim mesmo (revela o que ficou) ou regenerar os artefatos. |
+| `fase2_pendente` | Material entregue há 3+ dias. **Comece por ele**, antes de conteúdo novo. |
+| `revisao` | Cards vencidos. Revisão FSRS antes de conteúdo novo (`REVISAO_IA.md`). |
+| `fase2_recente` | Mencione o material e siga o que o aluno pedir. |
+| `sem_materia` | Ofereça começar uma matéria (`COOKBOOK.md` Parte B). |
+| `loop` | Sem pendências. Siga o loop a partir de `retomar_em`. |
+
+### Modo reentrada
+
+Dispara com 10+ dias sem sessão **ou** backlog acima de 15 cards. A sessão de volta é a mais frágil que existe — quem some três semanas erra muito, porque é exatamente assim que o esquecimento funciona. Se a volta for uma demonstração de fracasso, não há próxima.
+
+**O objetivo é reacender o hábito, não quitar a dívida.**
+
+1. **Teto de 8 cards.** O resto não some, só não é hoje.
+2. **Ordem por maior estabilidade** — os que ele provavelmente ainda acerta primeiro (`ORDER BY stability DESC`).
+3. **Nenhum conteúdo novo** nesta sessão.
+4. **A dica entra 1 tentativa antes do normal** — mas **a régua do rating não muda**. Baixar o rigor inflaria o intervalo e esconderia a lacuna; adiantar a dica dá o mesmo alívio e, como dica já limita o rating a 2, o FSRS continua recebendo o sinal honesto de "lembrou com ajuda".
+5. Diga o que está acontecendo, em voz alta, sem drama.
+6. Ao fim, **ofereça** espalhar o backlog restante pelos próximos dias — e só faça com um "pode" explícito (`REVISAO_IA.md` §1c).
+
+---
+
 ## Começar uma matéria nova
 
 1. Leia `estudo/progresso/_index.md`. Se a matéria já tem ledger → retome de `retomar_em`.
@@ -86,10 +120,18 @@ O ledger pode sobrescrever o rigor só naquela matéria, pelo campo `rigor:`. Le
    - `studio_create` para **cada artefato marcado como padrão no `PERFIL.md`**. Acompanhe com `studio_status`.
    - Em **todo** `focus_prompt`, inclua obrigatoriamente: a lista de conceitos da etapa, a ordem de cobrir todos eles, e a proibição explícita de avançar para etapas futuras. Passe também o `language` do perfil.
 6. Avise o aluno: qual etapa, qual o 80/20, o que ficou pronto — e **entregue o prompt calibrado para o chat** do NotebookLM, com as regras do método configurado e a lista de conceitos obrigatórios, pronto para colar.
+7. **Grave `fase2_iniciada_em: <hoje>` no ledger.** Sem isso o `status.py` não consegue detectar material abandonado, e a Fase 2 volta a morrer em silêncio.
+8. Convide o aluno a cronometrar: *"quando for começar, me diga **iniciar** — eu marco o tempo."*
 
 ### Fase 2 — STUDY (o aluno faz)
 
-Ele consome no NotebookLM (áudio no deslocamento, quiz, Q&A com citação). Você não age aqui — espera o retorno dele.
+Ele consome no NotebookLM (áudio no deslocamento, quiz, Q&A com citação). Você não conduz aqui, mas **não some**:
+
+- Quando ele disser **"iniciar"**, rode `python3 scripts/sessao.py iniciar`. O script usa o bloco de foco do `PERFIL.md` e devolve os horários de cada bloco e pausa. Não fique contando tempo na conversa — quem guarda é o banco.
+- Quando ele voltar, rode `python3 scripts/sessao.py fim --absorvido "<o que ele disse que ficou>"`.
+- Se ele pedir um ritmo diferente hoje, passe as flags: `--bloco 50 --pausa 10 --blocos 3`.
+
+**Peça pouco no retorno.** Não cobre placar nem relatório: uma pergunta só — *"me diga um conceito que você não conseguiria explicar agora"*. O recall da Fase 3 extrai o resto. Pergunta menor, retorno mais provável.
 
 ### Fase 3 — PROGRESS (você faz, escrevendo no workspace)
 
@@ -114,7 +156,7 @@ Ele consome no NotebookLM (áudio no deslocamento, quiz, Q&A com citação). Voc
 3. Atualize o **ledger** (`Edit`, não reescreva o arquivo): `topicos[].status`, `passo_loop`, `retomar_em`, e **todo erro vira item em `pontos_fracos`**.
 4. Atualize o **FSRS** em `estudo/progresso/srs.db` seguindo `REVISAO_IA.md`: para cada card revisado grave em `cards` + `review_log`. Crie cards novos dos pontos-chave e dos erros (sem duplicar pelo `front`).
 5. Atualize o **roadmap**: marque a etapa como `dominada` quando o critério fechar, e mova `etapa_atual`.
-6. Adicione uma linha em `## Log de aprendizado` (data + o que rolou + recall + nº de cards). Atualize `atualizado:` e o `_index.md`.
+6. Adicione uma linha em `## Log de aprendizado` (data + o que rolou + recall + nº de cards). Atualize `atualizado:`, **`ultima_sessao:`**, e **limpe `fase2_iniciada_em:`** — a Fase 2 se fechou. Atualize o `_index.md`.
 7. **Badge de conquista.** A cada etapa dominada, gere/atualize `estudo/progresso/jornada_do_heroi.jpg` em estilo certificado, adequado para postar no LinkedIn: percentual de progresso, todas as etapas do roadmap, os conceitos conquistados na etapa recém-fechada e as etapas futuras marcadas como pendentes. Atualize também `estudo/JORNADA.md`.
 
 ---

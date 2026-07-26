@@ -43,6 +43,18 @@
 - **Dica:** disponível em **todos** os níveis; o que muda é quando ela aparece e quanto contexto devolve
 - **Frequência de revisão:** _(padrão: quando o FSRS marcar o card como vencido)_
 
+## Ritmo da sessão
+
+> Blocos de foco cronometrados por `scripts/sessao.py`. 25/5 é o pomodoro clássico,
+> mas não é lei: bloco de 50 ou 90 min serve melhor a quem entra em profundidade,
+> e bloco curto serve a quem tem janelas picadas. Ajuste sem cerimônia.
+
+- **Bloco de foco:** _(minutos de estudo por bloco — padrão: 25)_
+- **Pausa curta:** _(minutos entre blocos — padrão: 5)_
+- **Pausa longa:** _(minutos após vários blocos — padrão: 15)_
+- **Blocos até a pausa longa:** _(padrão: 4)_
+- **Blocos por sessão:** _(quantos blocos você costuma fazer de uma vez — padrão: 2)_
+
 ## Produção no NotebookLM
 
 - **Idioma do conteúdo gerado:** _(ex.: pt-BR — vale para artefatos, chat e interações do agente)_

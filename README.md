@@ -34,12 +34,12 @@ Ele executa os **passos 1–8** (máquina) e emenda nos **9–20** (a entrevista
 barra de progresso contínua:
 
 ```
-[ 2/20 ] Garantindo o uv                ██░░░░░░░░░░░░░░  10%
-[ 5/20 ] Instalando o MCP pinado         ████░░░░░░░░░░░░  25%
-[ 8/20 ] Autenticando no NotebookLM      ██████░░░░░░░░░░  40%
-[13/20 ] Método de ensino                ██████████░░░░░░  65%
-[19/20 ] Rigor do tutor                  ███████████████░  95%
-[20/20 ] Tudo pronto                     ████████████████ 100%
+[ 2/21 ] Garantindo o uv                 █░░░░░░░░░░░░░░░  10%
+[ 5/21 ] Instalando o MCP pinado         ████░░░░░░░░░░░░  24%
+[ 8/21 ] Autenticando no NotebookLM      ██████░░░░░░░░░░  38%
+[13/21 ] Método de ensino                ██████████░░░░░░  62%
+[19/21 ] Rigor do tutor                  ██████████████░░  90%
+[21/21 ] Tudo pronto                     ████████████████ 100%
 ```
 
 No passo 8 o navegador abre para você entrar no Google — **use uma conta dedicada só
@@ -50,7 +50,17 @@ para estudo**, nunca a principal. O resto o agente confirma sozinho.
 ```
 quero começar a matéria X        → ele propõe um roadmap e espera seu OK
 rode o loop de estudo            → PREP → você estuda no NotebookLM → PROGRESS
+iniciar                          → começa a cronometrar seu bloco de foco
 ```
+
+**No dia a dia**, dois comandos resolvem tudo:
+
+```bash
+python3 scripts/status.py         # onde eu parei e por onde começar hoje
+python3 scripts/sessao.py iniciar # cronometra o bloco de foco (25/5 por padrão)
+```
+
+O `status.py` é o **passo zero de toda sessão** — o agente é instruído a rodá-lo antes de qualquer coisa. Ele detecta material que você recebeu e nunca consumiu, e dispara o **modo reentrada** quando você volta depois de sumir: teto de cards, começando pelos que você provavelmente ainda acerta, sem despejar a fila inteira de vencidos na sua cara.
 
 > **Prefere rodar na mão?** `python3 scripts/setup.py` (Linux/macOS) ou
 > `py scripts\setup.py` (Windows) faz os passos 1–8. Use `--dry-run` para só validar o
@@ -71,6 +81,7 @@ O tutor não é genérico — ele é **configurado no onboarding**:
 | **Postura** (5 opções) | inferida de 4 cenários, não de autodiagnóstico |
 | **Rigor** (4 níveis) | Webb DOK × standards-based grading: controla a profundidade da pergunta, o tamanho da lacuna no recall e a severidade do rating |
 | **Idioma e artefatos** | o que o NotebookLM sempre gera, e em que língua |
+| **Ritmo** | bloco de foco, pausa curta e pausa longa — 25/5 é o padrão, não a regra |
 
 Catálogo completo em [`METODOS_DE_ENSINO.md`](METODOS_DE_ENSINO.md).
 
@@ -111,7 +122,8 @@ aprendizagem-inteligente/
 │   │   ├── mcp_config.json          ← MCP com privilégio mínimo
 │   │   ├── mcp_pin.json             ← commit auditado do MCP
 │   │   └── skills/professor/SKILL.md ← o cérebro (persona + loop 3 fases)
-│   ├── scripts/               ← setup.py · mcp_update.py · mnemo.py
+│   ├── scripts/               ← status.py · sessao.py · setup.py
+│   │                             mcp_update.py · mnemo.py · workspace.py
 │   └── templates/             ← modelos copiados para estudo/ no setup
 │
 └── ▼ estudo/ — IGNORADO pelo git, nunca sai da sua máquina

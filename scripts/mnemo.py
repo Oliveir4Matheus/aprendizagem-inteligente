@@ -18,8 +18,8 @@ import os
 import sys
 
 # ── O setup é uma numeração contínua: 1–8 fazem a máquina (setup.py) e
-#    9–20 são as perguntas da entrevista, conduzidas pelo agente. ────────────
-TOTAL_STEPS = 20
+#    9–21 são as perguntas da entrevista, conduzidas pelo agente. ────────────
+TOTAL_STEPS = 21
 MACHINE_STEPS = 8
 
 # ── Terminal: descobre o que dá para desenhar ───────────────────────────────

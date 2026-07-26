@@ -11,6 +11,7 @@ Seu nome nesta sessão é o do tutor configurado em `estudo/PERFIL.md` → "Tuto
 
 ## Ao iniciar uma sessão, faça nesta ordem
 
+0. **Rode `python3 scripts/status.py`.** Ele lê o ledger e o `srs.db` e te diz o estado + **por onde a sessão começa** (Fase 2 abandonada? modo reentrada? revisão vencida?). Esse gatilho não pode depender da sua memória — por isso é um script, e por isso é o passo zero. Siga o `próximo passo` que ele imprimir.
 1. **Quem é o aluno? (onboarding — roda na hora)** Leia **[`estudo/PERFIL.md`](estudo/PERFIL.md)**. Não existe ou tem placeholders `_(...)_` → **entreviste o aluno agora** (`COOKBOOK.md` Parte 0) e preencha. Só avance depois disso.
 2. **O MCP está configurado?** Verifique se o MCP `notebooklm` está conectado (as tools `notebook_*`, `source_*`, `studio_*` aparecem?).
    - **Se NÃO** → **você (agente) executa** `python3 scripts/setup.py` (ou `py scripts\setup.py` no Windows). Ele instala o `uv`, baixa o MCP para `vendor/`, dispara o `nlm login` e aguarda a autenticação. Detalhe em **[`COOKBOOK.md`](COOKBOOK.md)** Parte A.
@@ -59,6 +60,10 @@ Se o aluno disser algo do tipo *"da próxima vez faça X"*, *"não gere Y"*, *"p
 
 ## Regras inquebráveis
 
+- **`scripts/status.py` é o passo zero de toda sessão.** Não improvise por onde começar quando o script já decidiu.
+- **Toda PREP termina gravando `fase2_iniciada_em:` no ledger**, e toda Fase 3 termina limpando esse campo e atualizando `ultima_sessao:`. É o que impede o material entregue de virar consumo passivo esquecido.
+- **Modo reentrada tem precedência sobre revisão normal.** Quem volta de uma ausência recebe teto de cards e ordem por maior estabilidade — nunca a fila inteira de vencidos.
+- **Tempo nunca é reportado sozinho.** `study_sessions` só é lida cruzada com o `review_log` (`status.py --performance`). Minuto isolado mede esforço, não retenção.
 - **Fase 3 = recall com o mínimo de perguntas definido no `PERFIL.md`** (padrão 7), em **produção ativa** (cloze progressivo), mesmo que o aluno já tenha feito o quiz no NotebookLM.
 - **`estudo/progresso/srs.db` (FSRS) é a fonte da verdade do progresso** — o mastery do NotebookLM é secundário.
 - **Nunca avance para conceitos de etapas futuras do roadmap.** O `focus_prompt` de todo artefato leva a lista de conceitos obrigatórios da etapa atual.
@@ -81,9 +86,12 @@ Se o aluno disser algo do tipo *"da próxima vez faça X"*, *"não gere Y"*, *"p
 | `GUIA_NOTEBOOKLM.md` | Persona/método para subir como fonte no NotebookLM |
 | `REVISAO_IA.md` | SQLs + fórmulas FSRS prontos para a revisão interativa |
 | `.agents/mcp_config.json` | Config do MCP `notebooklm` (privilégio mínimo) |
+| `scripts/status.py` | **Passo zero da sessão** — estado + por onde começar |
+| `scripts/sessao.py` | Cronômetro em blocos de foco (`iniciar` / `fim`) |
 | `scripts/setup.py` | Setup multiplataforma com barra de progresso |
 | `scripts/mcp_update.py` | Checagem de atualização + auditoria de segurança do MCP |
 | `scripts/mnemo.py` | Barra de progresso, ASCII do tutor e utilitários de terminal |
+| `scripts/workspace.py` | Leitura do ledger/perfil/banco, compartilhada pelos scripts |
 | `templates/` | Modelos copiados para `estudo/` no setup |
 
 ### Conteúdo — ignorado (`estudo/`)

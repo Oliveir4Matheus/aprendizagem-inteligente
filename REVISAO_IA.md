@@ -78,6 +78,56 @@ print(f"{len(cards)} cards para revisar hoje")
 
 Se `len(cards) == 0`: dizer ao aluno que não há revisões pendentes e sugerir estudar conteúdo novo.
 
+#### 1b. Modo reentrada — quando o aluno volta depois de sumir
+
+`python3 scripts/status.py` dispara este modo sozinho quando faz **10+ dias** sem sessão **ou** o backlog passa de **15 cards**. Não ignore o aviso.
+
+A sessão de volta é a mais frágil de todas: quem some três semanas volta e erra muito, porque três semanas sem revisar é exatamente o desenho do esquecimento. Se a primeira sessão de retorno for uma demonstração de fracasso, não há segunda. **O objetivo dela é reacender o hábito, não quitar a dívida.**
+
+```python
+TETO = 8
+rows = conn.execute(
+    "SELECT * FROM cards WHERE due_date <= ? "
+    "ORDER BY stability DESC, due_date ASC LIMIT ?",   # MAIOR estabilidade primeiro
+    (today, TETO)
+).fetchall()
+```
+
+O que muda:
+
+| | Sessão normal | Modo reentrada |
+|---|---|---|
+| Quantidade | até 20 cards | **teto de 8** |
+| Ordem | mais vencido primeiro | **maior estabilidade primeiro** — os que ele ainda acerta |
+| Conteúdo novo | permitido depois da revisão | **nenhum** |
+| Dica | conforme o nível de rigor | **1 tentativa antes do normal** |
+| Régua do rating | conforme o nível | **inalterada** |
+
+> **Por que a régua não muda.** Seria tentador baixar o rigor na volta para o aluno se sentir melhor. Isso infla o rating, que infla o intervalo, que esconde a lacuna — o problema volta maior daqui a duas semanas. Adiantar a dica dá o mesmo alívio **sem mentir para o agendamento**: a dica já limita o rating a 2, então o FSRS recebe exatamente o sinal correto, "lembrou com ajuda".
+
+Abra dizendo o que está acontecendo. Algo como: *"você sumiu 23 dias e tem 41 cards vencidos. Não vamos ver os 41 hoje — vamos ver 8, começando pelos que você provavelmente ainda sabe."*
+
+#### 1c. Espalhar o backlog — só com autorização
+
+Ao fim de uma sessão de reentrada, **ofereça** redistribuir o que sobrou pelos próximos dias. Nunca faça sozinho: `due_date` é a fonte da verdade do progresso, e reescrevê-la sem o aluno mandar contradiz o princípio central do sistema.
+
+```python
+# Só rode depois de um "pode espalhar" explícito.
+# Mexe apenas em due_date — stability e difficulty ficam intactas,
+# então o modelo FSRS não é corrompido, só a fila é reordenada no tempo.
+DIAS = 5
+restantes = conn.execute(
+    "SELECT id FROM cards WHERE due_date <= ? ORDER BY stability DESC", (today,)
+).fetchall()
+for i, r in enumerate(restantes):
+    nova = date.today() + timedelta(days=i % DIAS)
+    conn.execute("UPDATE cards SET due_date=? WHERE id=?", (str(nova), r["id"]))
+conn.commit()
+print(f"{len(restantes)} cards espalhados pelos próximos {DIAS} dias")
+```
+
+Registre no `## Log de aprendizado` do ledger que houve redistribuição, com a data e a quantidade.
+
 ### 2. Para cada card — apresentar em cloze
 
 Mostrar apenas `card["front"]`, reescrito como **texto lacunado** no tamanho do nível de rigor. NÃO mostrar `card["back"]` antes da resposta.
@@ -251,6 +301,40 @@ row = conn.execute("""
 """).fetchone()
 print(f"Total: {row[0]} | Vencidos hoje: {row[1]} | Novos: {row[2]} | Em revisão: {row[3]}")
 ```
+
+---
+
+---
+
+## Performance: tempo cruzado com retenção
+
+```bash
+python3 scripts/status.py --performance
+```
+
+A tabela `study_sessions` guarda o tempo cronometrado por `scripts/sessao.py`. **Ela nunca é lida sozinha.** Minuto isolado mede esforço, não aprendizado — celebrar "2h de estudo hoje" é exatamente a armadilha de medir engajamento no lugar de retenção, que o resto deste sistema existe para evitar.
+
+A leitura correta cruza tempo com o `review_log` da mesma data:
+
+```python
+linhas = conn.execute("""
+    SELECT date(s.inicio) dia,
+           SUM(s.duracao_min) minutos,
+           (SELECT COUNT(*) FROM review_log r WHERE r.review_date = date(s.inicio)) revisados,
+           (SELECT COUNT(*) FROM review_log r WHERE r.review_date = date(s.inicio) AND r.rating >= 3) retidos
+    FROM study_sessions s WHERE s.fim IS NOT NULL
+    GROUP BY dia ORDER BY dia DESC LIMIT 21
+""").fetchall()
+# custo por conceito retido = minutos / retidos
+```
+
+O número que interessa é **minutos por conceito retido**. Ele responde perguntas acionáveis:
+
+- O custo sobe depois do segundo bloco? → a sessão está longa demais para este aluno.
+- Blocos de 50 min custam menos por conceito que os de 25? → ajuste o **Bloco de foco** no `PERFIL.md`.
+- O custo disparou nesta matéria? → o material está mal recortado ou a etapa está grande demais.
+
+Precisa de algumas semanas de dado para dizer qualquer coisa. Antes disso, mostre a tabela mas **não tire conclusão** — n pequeno em série temporal é ruído com aparência de tendência.
 
 ---
 

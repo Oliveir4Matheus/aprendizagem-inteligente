@@ -2,11 +2,11 @@
 
 Este runbook é feito para **o agente executar**. Legenda: **[AGENTE]** = o orquestrador roda; **[HUMANO]** = ação do aluno.
 
-O setup é **uma numeração contínua de 20 passos**:
+O setup é **uma numeração contínua de 21 passos**:
 
 ```
 passos  1–8   parte de MÁQUINA      → scripts/setup.py faz sozinho
-passos  9–20  ENTREVISTA (onboarding) → o agente conduz, na conversa
+passos  9–21  ENTREVISTA (onboarding) → o agente conduz, na conversa
 ```
 
 A barra de progresso é a mesma nos dois trechos, para o aluno enxergar um setup só.
@@ -83,7 +83,7 @@ Roda quando `estudo/PERFIL.md` não existe ou tem campos com placeholder `_(...)
 
   Sou o MNEMO. Vou te acompanhar nos estudos e, mais importante,
   vou lembrar do que você aprendeu quando você já tiver esquecido.
-  São 12 perguntas para eu saber como te ensinar.
+  São 13 perguntas para eu saber como te ensinar.
 ```
 
 Antes de cada pergunta, desenhe a barra — mesma numeração da parte de máquina:
@@ -93,7 +93,7 @@ python3 scripts/mnemo.py bar 13 "Método de ensino"
 ```
 ou escreva na mão, no mesmo formato: `[13/20 ] Método de ensino  ██████████░░░░░░  65%`
 
-### Os 12 passos
+### Os 13 passos
 
 | # | Pergunta | Grava em `PERFIL.md` |
 |---|---|---|
@@ -109,6 +109,7 @@ ou escreva na mão, no mesmo formato: `[13/20 ] Método de ensino  ████�
 | 18 | **Cenário 4** — sobre ritmo, o que mais te incomoda? | (infere postura) |
 | 19 | **Quão rigoroso eu devo ser?** — apresente os 4 níveis | Rigor + mínimo de perguntas |
 | 20 | Em que **idioma** eu produzo, e quais **artefatos** eu sempre gero? | Produção no NotebookLM |
+| 21 | **Qual seu ritmo?** — bloco de foco, pausa curta, pausa longa | Ritmo da sessão |
 
 **Passo 13 — os 6 métodos** (roteiro completo em [`METODOS_DE_ENSINO.md`](METODOS_DE_ENSINO.md) §1):
 
@@ -135,11 +136,25 @@ Deixe claro que **dica existe em todos os níveis** — o que muda é quando apa
 
 **Passo 20 — artefatos.** Os tipos que o MCP realmente gera: `audio`, `video`, `infographic`, `mind_map`, `slide_deck`, `quiz`, `flashcards`, `report`, `data_table`. Pergunte quais entram no **conjunto padrão** (gerados a cada etapa, sem pedir) e quais ficam **sob demanda**. Confirme a duração preferida do áudio.
 
+**Passo 21 — ritmo da sessão.** Todo tempo de estudo é cronometrado em blocos de foco por `scripts/sessao.py`. Pergunte os quatro números — **e deixe claro que 25/5 é só o pomodoro clássico, não uma regra**:
+
+```
+Bloco de foco             25 min é o clássico. 50 ou 90 servem melhor a
+                          quem gosta de entrar fundo; 15 a quem tem
+                          janelas picadas do dia.
+Pausa curta               entre blocos — padrão 5 min
+Pausa longa               depois de vários blocos — padrão 15 min
+Blocos até a pausa longa  padrão 4
+Blocos por sessão         quantos você costuma fazer de uma vez — padrão 2
+```
+
+Se o aluno não fizer ideia, grave os padrões e diga que dá para mudar a qualquer momento no `PERFIL.md` ou por flag na hora (`sessao.py iniciar --bloco 50 --pausa 10`).
+
 ### Fechamento
 
 1. [AGENTE] Escreva tudo em `estudo/PERFIL.md` (substitua os placeholders).
 2. [AGENTE] Confirme: `python3 scripts/setup.py --dry-run` deve parar de listar campos pendentes.
-3. [AGENTE] Feche com a barra em `[20/20 ] Tudo pronto  ████████████████ 100%` e pergunte qual matéria começar.
+3. [AGENTE] Feche com a barra em `[21/21 ] Tudo pronto  ████████████████ 100%` e pergunte qual matéria começar.
 
 > Esse perfil dá contexto ao `SKILL.md`, `GUIA_NOTEBOOKLM.md` e `REVISAO_IA.md`. Na Fase PREP, suba `estudo/PERFIL.md` + `GUIA_NOTEBOOKLM.md` como fontes no NotebookLM.
 
@@ -161,8 +176,36 @@ Deixe claro que **dica existe em todos os níveis** — o que muda é quando apa
 
 Siga o cérebro em [`.agents/skills/professor/SKILL.md`](.agents/skills/professor/SKILL.md). Resumo executável:
 
+### C0. [AGENTE] Passo zero — sempre
+
+```bash
+python3 scripts/status.py
+```
+
+Lê o ledger e o `srs.db` e imprime o estado + **por onde a sessão começa**. Rode isto antes de qualquer coisa: o gatilho de Fase 2 abandonada e o modo reentrada não podem depender de o agente lembrar de checar.
+
+```
+     ___
+   (o,o)   MNEMO · Lean Six Sigma
+   /)_)    etapa 2/6 · Fase de Definição
+     " "
+
+  Cards vencidos      6             o mais antigo há 1 dia  ·  6 no total
+  Fase 2              há 4 dias     material entregue em 2026-07-22
+  Última sessão       há 4 dias     2026-07-22
+  Tempo (7 dias)      75 min        em 2 sessões  ·  bloco de 25 min
+  Rigor               nível 3
+
+───  PRÓXIMO PASSO  ────────────────────────────────────────
+
+  Fase 2 aberta há 4 dias. COMECE por ela: pergunte pelo material
+  antes de qualquer conteúdo novo.
+```
+
+Ações possíveis e o que fazer com cada uma: tabela na [`SKILL.md`](.agents/skills/professor/SKILL.md) → "Abrir a sessão".
+
 ### C1. [AGENTE] Retomar
-Leia `estudo/progresso/<materia>.md` → `retomar_em` + `pontos_fracos`. Se houver revisão FSRS vencida, ela vem **antes** de conteúdo novo (`REVISAO_IA.md`).
+Leia `estudo/progresso/<materia>.md` → `retomar_em` + `pontos_fracos`. Se houver revisão FSRS vencida, ela vem **antes** de conteúdo novo (`REVISAO_IA.md`) — salvo em modo reentrada, que tem regras próprias.
 
 ### C2. [AGENTE] FASE 1 — PREP (via MCP)
 1. Abra o roadmap → extraia os **conceitos obrigatórios da etapa atual** e o que está fora de escopo.
@@ -171,17 +214,50 @@ Leia `estudo/progresso/<materia>.md` → `retomar_em` + `pontos_fracos`. Se houv
 4. `source_add` → o `.md` recortado **+ `estudo/PERFIL.md` + `GUIA_NOTEBOOKLM.md`**.
 5. `studio_create` → um por artefato do conjunto padrão do `PERFIL.md`. Acompanhe com `studio_status`. Em **todo** `focus_prompt`: a lista de conceitos da etapa + proibição de avançar + `language` do perfil.
 6. Avise: etapa, 80/20, o que ficou pronto, e entregue o **prompt calibrado** para o chat.
+7. **Grave `fase2_iniciada_em: <hoje>` no ledger.** Sem isso o material entregue pode virar consumo passivo esquecido, sem ninguém notar.
+8. Convide a cronometrar: *"quando for começar, me diga **iniciar**."*
 
 ### C3. [HUMANO] FASE 2 — STUDY
 Estude no NotebookLM: áudio no deslocamento, responda o quiz, tire dúvidas com citação.
+
+**Cronometrando.** Diga "iniciar" e o agente roda:
+
+```bash
+python3 scripts/sessao.py iniciar
+python3 scripts/sessao.py iniciar --bloco 50 --pausa 10 --blocos 3   # ritmo diferente hoje
+python3 scripts/sessao.py agora                                      # o que está aberto
+python3 scripts/sessao.py fim --absorvido "SIPOC ficou; VOC ainda confuso"
+```
+
+Ele imprime o horário de cada bloco e pausa e sai do caminho — não há contagem regressiva ocupando o terminal. Os padrões vêm do `PERFIL.md` → "Ritmo da sessão".
+
+> O tempo gravado só é lido cruzado com o recall (`status.py --performance`). Ver `REVISAO_IA.md` → "Performance: tempo cruzado com retenção".
+
+**No retorno, o agente pergunta uma coisa só:** *"me diga um conceito que você não conseguiria explicar agora"*. Placar e detalhe saem do recall da Fase 3 — pedir relatório na porta de entrada só reduz a chance de o aluno voltar.
 
 ### C4. [AGENTE] FASE 3 — PROGRESS
 1. **Recall em cloze progressivo**, no mínimo o nº de perguntas do perfil (padrão 7), com o tamanho de lacuna do nível de rigor. Dica rebaixa a questão um nível e limita o rating a 2.
 2. Atualize o **ledger** (`Edit`): `topicos[].status`, `passo_loop`, `retomar_em`; **todo erro vira `pontos_fracos`**.
 3. Atualize o **FSRS** em `estudo/progresso/srs.db` (`REVISAO_IA.md`): rating 1–4, novo intervalo, `cards` + `review_log`; crie cards dos erros (sem duplicar pelo `front`).
 4. Atualize o **roadmap** (`etapa_atual`, status da etapa) e o `_index.md`.
-5. Linha nova no `## Log de aprendizado` + `atualizado:`.
+5. Linha nova no `## Log de aprendizado`, atualize `atualizado:` e `ultima_sessao:`, e **limpe `fase2_iniciada_em:`** — a Fase 2 se fechou.
 6. Etapa dominada → gere o **badge** `estudo/progresso/jornada_do_heroi.jpg` e atualize `estudo/JORNADA.md`.
+
+### C5. Modo reentrada — quando o aluno volta depois de sumir
+
+Disparado automaticamente pelo `status.py` com **10+ dias sem sessão** ou **backlog acima de 15 cards**. Tem precedência sobre a revisão normal.
+
+| | Sessão normal | Modo reentrada |
+|---|---|---|
+| Quantidade | até 20 cards | **teto de 8** |
+| Ordem | mais vencido primeiro | **maior estabilidade primeiro** |
+| Conteúdo novo | permitido após a revisão | **nenhum** |
+| Dica | conforme o nível de rigor | **1 tentativa antes** |
+| Régua do rating | conforme o nível | **inalterada** |
+
+A régua não muda de propósito: baixar o rigor inflaria o rating, que infla o intervalo, que esconde a lacuna. Adiantar a dica acolhe sem mentir para o agendamento — dica já limita o rating a 2.
+
+Ao fim, **ofereça** espalhar o backlog restante pelos próximos dias. Só execute com um "pode" explícito (`REVISAO_IA.md` §1c) — `due_date` é a fonte da verdade do progresso.
 
 ---
 
