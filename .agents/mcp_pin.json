@@ -1,0 +1,8 @@
+{
+  "_comentario": "Commit do MCP do NotebookLM que este workspace considera auditado. Só é alterado por scripts/mcp_update.py, depois de auditoria aprovada pelo aluno.",
+  "repo": "https://github.com/jacob-bd/notebooklm-mcp-cli.git",
+  "pin": "b2ab425",
+  "auditado_em": "2026-07-24",
+  "auditado_por": "auditoria manual inicial — licença MIT, deps mainstream, zero eval/exec/os.system/pickle, zero telemetria, rede só para google.com",
+  "historico": []
+}

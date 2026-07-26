@@ -1,8 +1,14 @@
-# artefatos locais
-__pycache__/
-*.pyc
-.DS_Store
-*.tmp
+# ─────────────────────────────────────────────────────────────────────────────
+#  A FRONTEIRA DO REPO
+#
+#  Versionado (raiz)  =  HARNESS  → como o sistema funciona e como o agente age
+#  Ignorado (estudo/) =  CONTEÚDO → quem você é e o que você estudou
+#
+#  Regra única: se está dentro de estudo/, NUNCA sobe. Ponto.
+#  Detalhes em AGENTS.md → "Onde escrever cada coisa".
+# ─────────────────────────────────────────────────────────────────────────────
+
+/estudo/
 
 # código do MCP: baixado para dentro do workspace no setup (tem git próprio) — não versionar
 /vendor/
@@ -11,3 +17,11 @@ __pycache__/
 # (aqui só por garantia, caso alguém copie algo por engano)
 **/auth.json
 **/cookies.json
+**/*.token
+
+# artefatos locais
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.tmp

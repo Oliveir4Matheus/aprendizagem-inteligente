@@ -1,10 +1,12 @@
 ---
 # ===== ESTADO (o "save game" — parseável, atualizado a cada passo) =====
 materia: Nome da Matéria
-atualizado: 2026-07-24
+atualizado: AAAA-MM-DD
 deck_anki: "Estudos::NomeDaMateria"
+roadmap: estudo/progresso/<materia>-roadmap.md   # trilha da matéria (gerada no início, aprovada por você)
 fontes:
-  - documentos/arquivo-de-origem.pdf
+  - estudo/documentos/arquivo-de-origem.pdf
+rigor: 3                      # 1..4 — sobrescreve o padrão do PERFIL só nesta matéria (opcional)
 topicos:
   - nome: Primeiro tópico
     status: dominado          # nao_iniciado | ensinando | recall_feito | cards_criados | dominado
@@ -21,7 +23,7 @@ cards_criados: 0
 
 ## Log de aprendizado
 <!-- Uma linha por sessão/marco. Mais recente embaixo. -->
-- 2026-07-24 — O que foi ensinado, como foi o recall, quantos cards.
+- AAAA-MM-DD — O que foi ensinado, como foi o recall, quantos cards.
 
 ## Notas do 80/20
 <!-- Os ~20% de conceitos que sustentam ~80% da matéria/prova. -->

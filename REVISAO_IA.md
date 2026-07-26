@@ -6,22 +6,24 @@ Este arquivo é auto-suficiente. Qualquer modelo de IA (Claude, GPT, Gemini, etc
 
 ## Contexto
 
-O aluno (perfil completo em `PERFIL.md`) usa este sistema de revisão assim:
+O aluno (perfil completo em `estudo/PERFIL.md`) usa este sistema de revisão assim:
 
 1. A IA busca os flashcards vencidos no banco SQLite
-2. Pergunta um card por vez (mostra só a frente)
-3. O aluno responde com suas próprias palavras
+2. Pergunta um card por vez — em **cloze progressivo**, no tamanho de lacuna do nível de rigor
+3. O aluno completa a lacuna com suas próprias palavras
 4. A IA avalia a resposta e atribui um rating 1-4
 5. A IA computa o próximo intervalo com FSRS v5 e salva no banco
 6. Repete até acabar os cards devidos
 
 **Estilo:** direto, técnico, sem enrolação. Valide respostas com precisão — o objetivo é retenção real, não aprovação fácil.
 
+**Rigor:** o nível (1 a 4) vem de `estudo/PERFIL.md` (ou do campo `rigor:` do ledger da matéria, que tem precedência). A escala completa está em [`METODOS_DE_ENSINO.md`](METODOS_DE_ENSINO.md) §2 e define três coisas: quanta lacuna o card mostra, quando a dica entra, e quão severo é o rating.
+
 ---
 
 ## Banco de dados
 
-**Arquivo:** `progresso/srs.db` (SQLite, relativo à raiz do projeto)
+**Arquivo:** `estudo/progresso/srs.db` (SQLite, relativo à raiz do projeto)
 
 **Tabela `cards`:**
 
@@ -53,7 +55,7 @@ A IA deve usar Python inline via Bash (ou equivalente no seu ambiente):
 import sqlite3, json
 from datetime import date, datetime, timedelta
 
-DB = './progresso/srs.db'
+DB = './estudo/progresso/srs.db'
 conn = sqlite3.connect(DB)
 conn.row_factory = sqlite3.Row
 ```
@@ -76,13 +78,22 @@ print(f"{len(cards)} cards para revisar hoje")
 
 Se `len(cards) == 0`: dizer ao aluno que não há revisões pendentes e sugerir estudar conteúdo novo.
 
-### 2. Para cada card — mostrar a frente
+### 2. Para cada card — apresentar em cloze
 
-Mostrar apenas `card["front"]`. NÃO mostrar `card["back"]` antes da resposta.
+Mostrar apenas `card["front"]`, reescrito como **texto lacunado** no tamanho do nível de rigor. NÃO mostrar `card["back"]` antes da resposta.
+
+```
+N1  uma palavra lacunada num parágrafo inteiro
+N2  várias lacunas curtas na mesma frase
+N3  a lacuna é uma justificativa inteira, ancorada no contexto real do aluno
+N4  só o cenário é dado; a lacuna é o diagnóstico completo + defesa sob contestação
+```
 
 ### 3. Aguardar resposta do aluno
 
-O aluno escreve a resposta com as próprias palavras.
+O aluno completa a lacuna com as próprias palavras.
+
+**Dica:** existe em todos os níveis. Ela **devolve contexto** (rebaixa a questão um nível: N4→N3, N3→N2, N2→N1) e nunca entrega a resposta. Quando entra: N1 ao primeiro sinal de hesitação, N2 após 1 tentativa, N3 e N4 após 2.
 
 ### 4. Avaliar e atribuir rating
 
@@ -95,7 +106,16 @@ Compare a resposta do aluno com `card["back"]` usando julgamento de IA:
 | 3      | Resposta correta com algum esforço ou pequena imprecisão        |
 | 4      | Correto, preciso e instantâneo — sem hesitação                  |
 
-**Seja rigoroso:** exija nome técnico correto, não só a ideia. Distinções entre conceitos parecidos contam.
+**A barra do rating 3 (domínio) sobe com o nível de rigor:**
+
+| | vale 3 quando… | imprecisão terminológica |
+|---|---|---|
+| **N1** | acertou a ideia central | não penaliza |
+| **N2** | acertou a ideia **e** o nome técnico | derruba para 2 |
+| **N3** | nome + exemplo + distinção do conceito vizinho, sem dica | derruba para 2 |
+| **N4** | sustentou o diagnóstico sob contestação, sem dica | derruba para 1 |
+
+> **Regra fixa em qualquer nível: acerto após dica vale no máximo rating 2.** Lembrou com apoio não é lembrar sozinho — e o espaçamento precisa refletir isso para não inflar o intervalo.
 
 ### 5. Calcular novo intervalo com FSRS v5
 
@@ -104,8 +124,13 @@ Execute este snippet Python substituindo os valores de `state, d, s, elapsed, ra
 ```python
 import math
 
-W = [0.4072,1.1829,3.1262,15.4722,7.2102,0.5316,1.0651,0.0589,
-     1.5330,0.1544,0.9858,1.9555,0.1157,0.1628,0.2746,0.0,2.9898,0.51,1.0651]
+# Pesos padrão do FSRS-5 (19 parâmetros).
+# ⚠️ NÃO edite índices soltos aqui. W[15] é a penalidade de "Hard" e multiplica o
+#    GANHO de estabilidade quando rating=2 — se virar 0, todo card avaliado com 2
+#    congela no mesmo intervalo para sempre (bug real que já existiu neste arquivo).
+W = [0.40255, 1.18385, 3.173,   15.69105, 7.1949,  0.5345,  1.4604,
+     0.0046,  1.54575, 0.1192,  1.01925,  1.9395,  0.11,    0.29605,
+     2.2698,  0.2315,  2.9898,  0.51655,  0.6621]
 DECAY=-0.5; FACTOR=0.9**(1/DECAY)-1
 REQUESTED_RETENTION = 0.95 # Define a retenção desejada (0.95 encurta os intervalos em ~54% para revisões mais frequentes)
 
@@ -183,7 +208,7 @@ Durante o ensino de conteúdo novo, a IA pode salvar cards diretamente:
 import sqlite3, json
 from datetime import date, datetime
 
-conn = sqlite3.connect('./progresso/srs.db')
+conn = sqlite3.connect('./estudo/progresso/srs.db')
 cards_novos = [
     {
         "front": "Pergunta aqui",
@@ -215,7 +240,7 @@ print(f"{added} cards adicionados ao SRS")
 ## Ver estatísticas rápidas
 
 ```python
-conn = sqlite3.connect('./progresso/srs.db')
+conn = sqlite3.connect('./estudo/progresso/srs.db')
 row = conn.execute("""
     SELECT
         COUNT(*) total,
@@ -232,7 +257,7 @@ print(f"Total: {row[0]} | Vencidos hoje: {row[1]} | Novos: {row[2]} | Em revisã
 ## Notas importantes
 
 - **Nunca** mostrar o `back` antes do aluno responder
-- **Sempre** confirmar se o DB existe em `./progresso/srs.db` antes de começar
+- **Sempre** confirmar se o DB existe em `./estudo/progresso/srs.db` antes de começar
 - Em caso de dúvida no rating, pedir ao aluno para reformular — o objetivo é calibração honesta
-- Siga as preferências do `PERFIL.md` (por padrão: perguntas que exijam nome técnico + exemplo concreto + distinção entre conceitos parecidos — não só a ideia geral)
+- Siga as preferências do `estudo/PERFIL.md` (por padrão: perguntas que exijam nome técnico + exemplo concreto + distinção entre conceitos parecidos — não só a ideia geral)
 - Intervalo `= round(stability)` dias — não precisa de fórmula complexa para o intervalo final
