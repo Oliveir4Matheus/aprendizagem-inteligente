@@ -36,12 +36,18 @@ def coletar() -> dict:
     aberta = con.execute(
         "SELECT * FROM study_sessions WHERE fim IS NULL ORDER BY inicio DESC LIMIT 1"
     ).fetchone()
+    # Sessões interrompidas (o aluno esqueceu de fechar) ficam de fora de toda
+    # estatística: a duração delas é ficção e contaminaria min/conceito-retido.
     semana = con.execute(
         "SELECT COALESCE(SUM(duracao_min),0), COUNT(*) FROM study_sessions "
-        "WHERE fim IS NOT NULL AND date(inicio) >= date('now','-7 day')"
+        "WHERE fim IS NOT NULL AND interrompida = 0 AND date(inicio) >= date('now','-7 day')"
     ).fetchone()
     ultima_sessao_db = con.execute(
-        "SELECT MAX(date(inicio)) FROM study_sessions WHERE fim IS NOT NULL"
+        "SELECT MAX(date(inicio)) FROM study_sessions WHERE fim IS NOT NULL AND interrompida = 0"
+    ).fetchone()[0]
+    interrompidas = con.execute(
+        "SELECT COUNT(*) FROM study_sessions WHERE interrompida = 1 "
+        "AND date(inicio) >= date('now','-7 day')"
     ).fetchone()[0]
     ultimo_recall = con.execute("SELECT MAX(review_date) FROM review_log").fetchone()[0]
 
@@ -67,6 +73,7 @@ def coletar() -> dict:
         "dias_sem_sessao": ws.dias_desde(ultima),
         "min_7dias": semana[0] or 0,
         "sessoes_7dias": semana[1] or 0,
+        "interrompidas_7dias": interrompidas,
         "sessao_aberta": dict(aberta) if aberta else None,
         "ritmo": ws.ritmo(),
     }
@@ -158,9 +165,11 @@ def imprimir(d: dict) -> None:
     linha("Última sessão",
           "hoje" if dss == 0 else (f"há {ws.plural(dss, 'dia', 'dias')}" if dss is not None else "nunca"),
           d["ultima_sessao"] or "")
-    linha("Tempo (7 dias)", f"{d['min_7dias']} min",
-          f"em {ws.plural(d['sessoes_7dias'], 'sessão', 'sessões')}  ·  "
-          f"bloco de {d['ritmo']['bloco_min']} min")
+    obs = (f"em {ws.plural(d['sessoes_7dias'], 'sessão', 'sessões')}  ·  "
+           f"bloco de {d['ritmo']['bloco_min']} min")
+    if d["interrompidas_7dias"]:
+        obs += f"  ·  {d['interrompidas_7dias']} interrompida(s), fora da conta"
+    linha("Tempo (7 dias)", f"{d['min_7dias']} min", obs)
     linha("Rigor", f"nível {d['rigor']}", "")
 
     if d["sessao_aberta"]:
@@ -201,9 +210,11 @@ def performance() -> int:
                (SELECT COUNT(*) FROM review_log r WHERE r.review_date = date(s.inicio)) revisados,
                (SELECT COUNT(*) FROM review_log r WHERE r.review_date = date(s.inicio) AND r.rating >= 3) retidos
         FROM study_sessions s
-        WHERE s.fim IS NOT NULL
+        WHERE s.fim IS NOT NULL AND s.interrompida = 0
         GROUP BY dia ORDER BY dia DESC LIMIT 21
     """).fetchall()
+    perdidas = con.execute(
+        "SELECT COUNT(*) FROM study_sessions WHERE interrompida = 1").fetchone()[0]
 
     mnemo.rule(" TEMPO x RETENÇÃO ")
     print()
@@ -228,6 +239,8 @@ def performance() -> int:
     print()
     print(f"  {mnemo.dim('Retido = rating 3 ou 4 no recall daquele dia. É o único número que importa aqui —')}")
     print(f"  {mnemo.dim('minutos sozinhos medem esforço, não aprendizado.')}")
+    if perdidas:
+        print(f"  {mnemo.dim(f'{perdidas} sessão(ões) interrompida(s) fora da conta — duração não confiável.')}")
     print()
     con.close()
     return 0

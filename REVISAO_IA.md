@@ -322,11 +322,13 @@ linhas = conn.execute("""
            SUM(s.duracao_min) minutos,
            (SELECT COUNT(*) FROM review_log r WHERE r.review_date = date(s.inicio)) revisados,
            (SELECT COUNT(*) FROM review_log r WHERE r.review_date = date(s.inicio) AND r.rating >= 3) retidos
-    FROM study_sessions s WHERE s.fim IS NOT NULL
+    FROM study_sessions s WHERE s.fim IS NOT NULL AND s.interrompida = 0
     GROUP BY dia ORDER BY dia DESC LIMIT 21
 """).fetchall()
 # custo por conceito retido = minutos / retidos
 ```
+
+> **`interrompida = 0` não é detalhe.** Quando o aluno esquece de fechar a sessão, o script a encerra no dia seguinte com duração não confiável. Incluir essas linhas infla a contagem de sessões e polui o custo médio — o número passa a medir esquecimento em vez de estudo.
 
 O número que interessa é **minutos por conceito retido**. Ele responde perguntas acionáveis:
 

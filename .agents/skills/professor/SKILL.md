@@ -93,6 +93,8 @@ Dispara com 10+ dias sem sessão **ou** backlog acima de 15 cards. A sessão de 
 5. Diga o que está acontecendo, em voz alta, sem drama.
 6. Ao fim, **ofereça** espalhar o backlog restante pelos próximos dias — e só faça com um "pode" explícito (`REVISAO_IA.md` §1c).
 
+**Válvula de escape.** O modo reentrada é uma sugestão bem fundamentada, não uma cerca. Se o aluno disser que está com tempo e vontade de ir além — *"quero seguir mesmo assim"*, *"manda mais"* —, **atenda sem discutir**. Diga em uma linha o que a evidência sugere e siga o que ele pediu: tratar um adulto motivado como frágil é uma forma pior de perder aluno do que a fila grande.
+
 ---
 
 ## Começar uma matéria nova

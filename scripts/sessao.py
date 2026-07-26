@@ -134,7 +134,8 @@ def cmd_fim(args) -> int:
 
     hoje = agora.date().isoformat()
     tot = con.execute(
-        "SELECT COALESCE(SUM(duracao_min),0), COUNT(*) FROM study_sessions WHERE date(inicio)=?",
+        "SELECT COALESCE(SUM(duracao_min),0), COUNT(*) FROM study_sessions "
+        "WHERE date(inicio)=? AND interrompida = 0",
         (hoje,),
     ).fetchone()
     revs = con.execute("SELECT COUNT(*) FROM review_log WHERE review_date=?", (hoje,)).fetchone()[0]
