@@ -1,0 +1,627 @@
+<title>Avaliação da qualidade de aprendizagem — Aprendizagem Inteligente</title>
+<style>
+  :root {
+    --paper:   #ECEEF1;
+    --paper-2: #E2E5EA;
+    --rule:    #C6CBD3;
+    --ink:     #13171E;
+    --ink-2:   #464E5B;
+    --ink-3:   #737C8A;
+    --accent:  #6A3D5B;
+    --forte:   #2F6B4F;
+    --medio:   #B0813A;
+    --fraco:   #9B3B32;
+    --grid:    #D2D6DD;
+
+    --f-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --f-body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --f-mono: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --measure: 66ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0F1216; --paper-2: #171B21; --rule: #2C323B;
+      --ink: #E4E7EC; --ink-2: #A6AEBB; --ink-3: #78818F;
+      --accent: #C08BAF; --forte: #6FB58F; --medio: #D8AC61; --fraco: #DB7A6E; --grid: #262C34;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0F1216; --paper-2: #171B21; --rule: #2C323B;
+    --ink: #E4E7EC; --ink-2: #A6AEBB; --ink-3: #78818F;
+    --accent: #C08BAF; --forte: #6FB58F; --medio: #D8AC61; --fraco: #DB7A6E; --grid: #262C34;
+  }
+  :root[data-theme="light"] {
+    --paper: #ECEEF1; --paper-2: #E2E5EA; --rule: #C6CBD3;
+    --ink: #13171E; --ink-2: #464E5B; --ink-3: #737C8A;
+    --accent: #6A3D5B; --forte: #2F6B4F; --medio: #B0813A; --fraco: #9B3B32; --grid: #D2D6DD;
+  }
+
+  body { background: var(--paper); color: var(--ink); font-family: var(--f-body);
+         font-size: 16.5px; line-height: 1.68; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 78rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .col { max-width: var(--measure); }
+
+  .masthead { padding: 3.5rem 0 1.5rem; border-bottom: 3px double var(--ink); margin-bottom: 2.5rem; }
+  .eyebrow { font-family: var(--f-mono); font-size: .7rem; letter-spacing: .18em; text-transform: uppercase;
+             color: var(--accent); display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; margin-bottom: 1.5rem; }
+  h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(2rem, 5vw, 3.3rem);
+       line-height: 1.04; letter-spacing: -.028em; text-wrap: balance; max-width: 20ch; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .dek { font-size: clamp(1.02rem, 2vw, 1.18rem); line-height: 1.55; color: var(--ink-2);
+         max-width: 58ch; margin-top: 1.2rem; }
+
+  .persona { display: grid; grid-template-columns: minmax(0,1fr); gap: 1.75rem;
+             border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+             padding: 2rem 0; margin-bottom: 3.5rem; }
+  @media (min-width: 56rem) { .persona { grid-template-columns: 16rem minmax(0,1fr); gap: 3.5rem; } }
+  .persona-id .name { font-family: var(--f-display); font-weight: 700; font-size: 1.4rem;
+                      letter-spacing: -.02em; line-height: 1.15; margin-bottom: .4rem; }
+  .persona-id .role { font-family: var(--f-mono); font-size: .69rem; letter-spacing: .1em;
+                      text-transform: uppercase; color: var(--accent); line-height: 1.55; }
+  .persona-id dl { margin-top: 1.5rem; display: grid; gap: .9rem; }
+  .persona-id dt { font-family: var(--f-mono); font-size: .64rem; letter-spacing: .12em;
+                   text-transform: uppercase; color: var(--ink-3); margin-bottom: .15rem; }
+  .persona-id dd { font-size: .87rem; line-height: 1.5; color: var(--ink-2); }
+  .persona-body p { margin-bottom: 1rem; }
+  .persona-body p:last-child { margin-bottom: 0; }
+  .persona-body .lede { font-family: var(--f-display); font-size: 1.1rem; line-height: 1.5;
+                        letter-spacing: -.01em; }
+  .quote { font-size: 1.08rem; line-height: 1.55; font-style: italic; color: var(--accent);
+           border-left: 3px solid var(--accent); padding-left: 1.15rem; margin: 1.5rem 0; }
+
+  section { margin-bottom: 4rem; }
+  h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+       letter-spacing: -.022em; line-height: 1.15; padding-bottom: .55rem;
+       border-bottom: 2px solid var(--ink); margin-bottom: .5rem; }
+  .section-note { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .11em;
+                  text-transform: uppercase; color: var(--ink-3); margin-bottom: 2rem; }
+  h3 { font-family: var(--f-display); font-weight: 700; font-size: 1.16rem; letter-spacing: -.015em;
+       line-height: 1.3; margin-bottom: .45rem; text-wrap: balance; }
+  p { margin-bottom: 1rem; } p:last-child { margin-bottom: 0; }
+  code { font-family: var(--f-mono); font-size: .84em; background: var(--paper-2);
+         padding: .1em .35em; border: 1px solid var(--rule); }
+
+  figure { margin: 2rem 0; border: 1px solid var(--rule); background: var(--paper-2); }
+  .chart-head { padding: 1.15rem 1.3rem .3rem; }
+  .chart-title { font-family: var(--f-display); font-weight: 700; font-size: 1.08rem; letter-spacing: -.015em; }
+  .chart-sub { font-family: var(--f-mono); font-size: .66rem; letter-spacing: .1em;
+               text-transform: uppercase; color: var(--ink-3); margin-top: .4rem; }
+  .chart-scroll { overflow-x: auto; padding: .7rem 1.3rem 1rem; }
+  figure svg { display: block; }
+  figcaption { padding: 0 1.3rem 1.25rem; font-size: .89rem; line-height: 1.55; color: var(--ink-2); }
+  .ax { stroke: var(--grid); stroke-width: 1; }
+  .axlab { font-family: var(--f-mono); font-size: 10px; fill: var(--ink-3); letter-spacing: .05em; }
+  .vlab { font-family: var(--f-mono); font-size: 11.5px; fill: var(--ink); font-variant-numeric: tabular-nums; }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 1.1rem; padding: 0 1.3rem 1.1rem;
+                  font-family: var(--f-mono); font-size: .66rem; letter-spacing: .08em;
+                  text-transform: uppercase; color: var(--ink-3); }
+  .chart-legend span { display: flex; align-items: center; gap: .45rem; }
+  .sw { width: .9rem; height: .55rem; display: inline-block; }
+
+  /* rubrica */
+  .rub { border-top: 2px solid var(--ink); }
+  .rubrow { display: grid; grid-template-columns: minmax(0,1fr); gap: .6rem;
+            padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 56rem) { .rubrow { grid-template-columns: 3.5rem 13rem minmax(0, var(--measure)); gap: 1.8rem; } }
+  .rub-score { font-family: var(--f-display); font-weight: 700; font-size: 2rem; line-height: 1;
+               font-variant-numeric: tabular-nums; }
+  .rub-score span { font-size: .8rem; color: var(--ink-3); font-weight: 400; }
+  .s5, .s4 { color: var(--forte); } .s3 { color: var(--medio); } .s2, .s1 { color: var(--fraco); }
+  .rub-name { font-family: var(--f-display); font-weight: 700; font-size: 1.02rem; letter-spacing: -.012em; }
+  .rub-base { font-family: var(--f-mono); font-size: .64rem; letter-spacing: .09em;
+              text-transform: uppercase; color: var(--ink-3); margin-top: .35rem; line-height: 1.5; }
+  .rub-body p { font-size: .95rem; margin-bottom: .7rem; }
+  .verdict-tag { font-family: var(--f-mono); font-size: .62rem; letter-spacing: .13em; text-transform: uppercase;
+                 color: var(--paper); padding: .25rem .5rem; display: inline-block; margin-bottom: .6rem; }
+  .t-forte { background: var(--forte); } .t-medio { background: var(--medio); } .t-fraco { background: var(--fraco); }
+
+  .finding { display: grid; grid-template-columns: minmax(0,1fr); gap: .8rem;
+             padding: 1.7rem 0; border-top: 1px solid var(--rule); }
+  @media (min-width: 56rem) { .finding { grid-template-columns: 10rem minmax(0, var(--measure)); gap: 2.5rem; } }
+  .finding:first-of-type { border-top: 2px solid var(--ink); }
+  .f-meta { display: flex; flex-direction: column; gap: .5rem; align-items: flex-start; }
+  .f-id { font-family: var(--f-mono); font-size: .76rem; letter-spacing: .1em; color: var(--ink-3); }
+  .label { font-family: var(--f-mono); font-size: .63rem; letter-spacing: .13em; text-transform: uppercase;
+           color: var(--ink-3); display: block; margin: 1.1rem 0 .4rem; }
+  .fix { border-left: 3px solid var(--accent); padding-left: 1.15rem; font-size: .94rem; line-height: 1.6; }
+  .evid { background: var(--paper-2); border: 1px solid var(--rule); padding: .9rem 1.1rem;
+          font-size: .92rem; line-height: 1.55; }
+  pre { font-family: var(--f-mono); font-size: .75rem; line-height: 1.55; background: var(--paper-2);
+        border: 1px solid var(--rule); padding: .9rem 1rem; overflow-x: auto; white-space: pre; }
+  ul.plain { list-style: none; display: grid; gap: .55rem; }
+  ul.plain li { padding-left: 1.25rem; position: relative; font-size: .95rem; color: var(--ink-2); }
+  ul.plain li::before { content: "▸"; position: absolute; left: 0; color: var(--accent); font-size: .8em; }
+
+  .verdict { border: 2px solid var(--ink); padding: 1.6rem 1.7rem; margin-bottom: 2.2rem; background: var(--paper-2); }
+  .verdict-mark { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
+                  color: var(--accent); font-weight: 600; margin-bottom: .8rem; }
+  .verdict-line { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.2rem, 2.6vw, 1.62rem);
+                  line-height: 1.28; letter-spacing: -.022em; max-width: 40ch; text-wrap: balance; margin: 0; }
+  .verdict-line em { font-style: normal; color: var(--accent); }
+  .sign { margin-top: 2.6rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); max-width: var(--measure); }
+  .sign-name { font-family: var(--f-body); font-style: italic; font-size: 1.45rem; line-height: 1.1; }
+  .sign-role { font-family: var(--f-mono); font-size: .64rem; letter-spacing: .12em;
+               text-transform: uppercase; color: var(--ink-3); margin-top: .5rem; }
+
+  footer { border-top: 3px double var(--ink); padding-top: 1.5rem; font-family: var(--f-mono);
+           font-size: .7rem; letter-spacing: .06em; color: var(--ink-3); line-height: 1.75; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+<style>
+  /* ---------- aparato de citação ---------- */
+  .cit { font-family: var(--f-mono); font-size: .68em; vertical-align: super;
+         color: var(--accent); font-weight: 600; letter-spacing: .02em;
+         text-decoration: none; padding: 0 .1em; }
+  .cit:hover { text-decoration: underline; }
+  .evidencia { border: 1px solid var(--rule); border-left: 3px solid var(--accent);
+               background: var(--paper-2); padding: .9rem 1.1rem; margin: 1rem 0;
+               font-size: .88rem; line-height: 1.55; }
+  .evidencia .cab { font-family: var(--f-mono); font-size: .62rem; letter-spacing: .14em;
+                    text-transform: uppercase; color: var(--accent); margin-bottom: .5rem; }
+  .evidencia .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums;
+                    font-weight: 600; color: var(--ink); }
+  .refs { border-top: 2px solid var(--ink); }
+  .ref { display: grid; grid-template-columns: 2.6rem minmax(0,1fr); gap: 1.2rem;
+         padding: .9rem 0; border-bottom: 1px solid var(--rule); font-size: .88rem;
+         line-height: 1.5; }
+  .ref-n { font-family: var(--f-mono); font-size: .74rem; color: var(--accent);
+           font-variant-numeric: tabular-nums; padding-top: .2rem; }
+  .ref-cit { color: var(--ink); }
+  .ref-o { color: var(--ink-2); display: block; margin-top: .25rem; font-size: .84rem; }
+  .grau { font-family: var(--f-mono); font-size: .6rem; letter-spacing: .1em;
+          text-transform: uppercase; padding: .15rem .4rem; margin-left: .4rem;
+          color: var(--paper); white-space: nowrap; }
+  .g-forte { background: var(--forte); } .g-media { background: var(--medio); }
+  .g-teorica { background: var(--ink-3); }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>Parecer técnico · 2ª emissão</span>
+      <span>Qualidade de aprendizagem</span>
+      <span>Rubrica das 7 alavancas</span>
+      <span>26 jul 2026</span>
+    </div>
+    <h1>Dois vazios preenchidos. Agora ele <em>ensina e mede</em> como a evidência manda.</h1>
+    <p class="dek">Reemissão do parecer sobre o workspace <strong>Aprendizagem Inteligente</strong> após a implementação da calibração metacognitiva e da integração cumulativa. Versão auditada: <code>32a6837</code>. Cada juízo deste documento traz a fonte que o sustenta.</p>
+  </header>
+
+  <div class="persona">
+    <div class="persona-id">
+      <div class="name">Prof. Heitor Maia</div>
+      <div class="role">Psicólogo cognitivo<br>Avaliação de sistemas tutoriais</div>
+      <dl>
+        <div><dt>Trajetória</dt><dd>22 anos. Começou formando professores de rede pública, desenhou o programa de residência de um hospital-escola, e há uma década avalia plataformas de ensino adaptativo.</dd></div>
+        <div><dt>Onde trabalha</dt><dd>Na fronteira entre a evidência de laboratório e a segunda-feira de manhã. Diz que a maior parte do que funciona em experimento morre nesse contato.</dd></div>
+        <div><dt>Instrumento</dt><dd>Rubrica das 7 alavancas da aprendizagem durável, pontuada de 0 a 5.</dd></div>
+        <div><dt>Lente</dt><dd>As duas forças de Bjork. De cada recurso ele pergunta: isto constrói <em>força de armazenamento</em>, ou só bajula a <em>força de recuperação</em>?<a class="cit" href="#r1">[1]</a></dd></div>
+      </dl>
+    </div>
+    <div class="persona-body">
+      <p class="lede">A distinção que organiza todo o meu trabalho é simples e contraintuitiva: o quanto você consegue lembrar agora e o quanto aquilo está de fato aprendido são duas coisas diferentes — e frequentemente andam em direções opostas.<a class="cit" href="#r1">[1]</a></p>
+      <p>Condições que fazem a informação vir fácil na hora costumam <strong>reduzir</strong> o ganho duradouro. É por isso que desconfio profissionalmente de tudo que faz o aluno se sentir bem durante o estudo — e é por isso que exijo fonte para cada juízo que emito, inclusive os elogiosos.</p>
+      <p class="quote">Aprender bem raramente é agradável no momento em que acontece. Quando o aluno sai da sessão se sentindo ótimo, eu vou olhar os dados duas vezes.</p>
+      <p><strong>Uma ressalva de escopo, que muda o que se pode cobrar deste sistema.</strong> Isto é um tutor, não um produto de engajamento. A responsabilidade de aparecer para estudar é do aluno — e deve ser. Um bom professor particular não persegue ninguém pelo telefone; ele é excelente quando o aluno senta na cadeira. Minha pergunta é única: <strong>quando o aluno senta, o que acontece com a memória dele?</strong></p>
+      <p><strong>Sobre as fontes.</strong> Marco cada afirmação com a referência e o <em>grau</em> de evidência que a sustenta: <span class="grau g-forte">forte</span> quando há meta-análise ou ensaio randomizado, <span class="grau g-media">média</span> quando há estudos convergentes sem síntese quantitativa robusta, <span class="grau g-teorica">teórica</span> quando é raciocínio a partir de um modelo aceito, sem teste direto do caso específico. A terceira categoria existe porque avaliar honestamente inclui dizer onde eu estou inferindo.</p>
+    </div>
+  </div>
+
+  <section>
+    <h2>O que mudou nesta emissão</h2>
+    <p class="section-note">Rubrica anterior → atual</p>
+
+    <figure>
+      <div class="chart-head">
+        <div class="chart-title">Pontuação por alavanca, antes e depois</div>
+        <div class="chart-sub">linha de referência em 4 = padrão que eu esperaria de um bom sistema tutorial</div>
+      </div>
+      <div class="chart-scroll">
+        <svg viewBox="0 0 760 320" width="760" height="320" role="img" aria-label="Gráfico de barras comparando as sete alavancas antes e depois. Intercalação sobe de 1 para 4, calibração metacognitiva de 1 para 4, transferência de 2 para 4. As demais permanecem: recuperação ativa 5, prática espaçada 4, dificuldade desejável 5, carga cognitiva 4.">
+          <g class="axlab" text-anchor="end" fill="var(--ink-2)">
+            <text x="196" y="36">Recuperação ativa</text>
+            <text x="196" y="76">Prática espaçada</text>
+            <text x="196" y="116">Intercalação</text>
+            <text x="196" y="156">Dificuldade desejável</text>
+            <text x="196" y="196">Calibração metacognitiva</text>
+            <text x="196" y="236">Carga cognitiva</text>
+            <text x="196" y="276">Transferência</text>
+          </g>
+          <g class="ax" opacity=".7">
+            <line x1="212" y1="14" x2="212" y2="292"/><line x1="308" y1="14" x2="308" y2="292"/>
+            <line x1="404" y1="14" x2="404" y2="292"/><line x1="500" y1="14" x2="500" y2="292"/>
+            <line x1="692" y1="14" x2="692" y2="292"/>
+          </g>
+          <line x1="596" y1="8" x2="596" y2="300" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 4"/>
+          <text class="axlab" x="600" y="314" fill="var(--accent)">referência 4</text>
+          <g>
+            <rect x="212" y="22" width="480" height="18" fill="var(--forte)"/>
+            <rect x="212" y="62" width="384" height="18" fill="var(--forte)"/>
+            <rect x="212" y="102" width="96"  height="18" fill="var(--fraco)" opacity=".35"/>
+            <rect x="212" y="102" width="384" height="18" fill="var(--forte)" opacity="0"/>
+            <rect x="308" y="102" width="288" height="18" fill="var(--forte)"/>
+            <rect x="212" y="142" width="480" height="18" fill="var(--forte)"/>
+            <rect x="212" y="182" width="96"  height="18" fill="var(--fraco)" opacity=".35"/>
+            <rect x="308" y="182" width="288" height="18" fill="var(--forte)"/>
+            <rect x="212" y="222" width="384" height="18" fill="var(--forte)"/>
+            <rect x="212" y="262" width="192" height="18" fill="var(--fraco)" opacity=".35"/>
+            <rect x="404" y="262" width="192" height="18" fill="var(--forte)"/>
+          </g>
+          <g class="vlab">
+            <text x="702" y="36">5</text><text x="606" y="76">4</text>
+            <text x="606" y="116">4</text><text x="702" y="156">5</text>
+            <text x="606" y="196">4</text><text x="606" y="236">4</text><text x="606" y="276">4</text>
+          </g>
+          <g class="axlab" fill="var(--fraco)">
+            <text x="240" y="116">era 1</text><text x="240" y="196">era 1</text><text x="240" y="276">era 2</text>
+          </g>
+          <g class="axlab" text-anchor="middle" fill="var(--ink-3)">
+            <text x="212" y="308">0</text><text x="308" y="308">1</text><text x="404" y="308">2</text>
+            <text x="500" y="308">3</text><text x="692" y="308">5</text>
+          </g>
+        </svg>
+      </div>
+      <div class="chart-legend">
+        <span><i class="sw" style="background:var(--fraco);opacity:.35"></i>Emissão anterior</span>
+        <span><i class="sw" style="background:var(--forte)"></i>Atual</span>
+      </div>
+      <figcaption><strong>Média de 3,1 para 4,3.</strong> O perfil em serra desapareceu: não há mais alavanca abaixo de 4. As três que subiram não subiram por ajuste cosmético — cada uma ganhou um mecanismo novo, e eu verifiquei os três em execução.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Rubrica comentada</h2>
+    <p class="section-note">Cada nota com a fonte que a sustenta</p>
+
+    <div class="rub">
+
+      <div class="rubrow">
+        <div class="rub-score s5">5<span>/5</span></div>
+        <div>
+          <div class="rub-name">Recuperação ativa</div>
+          <div class="rub-base">Efeito do teste<br><a class="cit" href="#r2">[2]</a><a class="cit" href="#r3">[3]</a><a class="cit" href="#r4">[4]</a><span class="grau g-forte">forte</span></div>
+        </div>
+        <div class="rub-body">
+          <div class="verdict-tag t-forte">Exemplar · mantido</div>
+          <p>O sistema obriga o aluno a <strong>produzir</strong>, e a cláusula que exige o recall <em>mesmo que o quiz já tenha sido feito</em> continua sendo a decisão mais importante do documento.</p>
+          <div class="evidencia">
+            <div class="cab">Base empírica</div>
+            Roediger &amp; Karpicke<a class="cit" href="#r2">[2]</a> mostraram que estudar repetidamente vence o teste repetido em prova imediata (5 min) e <strong>perde de forma acentuada</strong> em prova adiada — ao mesmo tempo em que o restudo <em>aumenta a confiança</em> do aluno. É o retrato exato do que este sistema recusa. A meta-análise de Adesope e colegas<a class="cit" href="#r3">[3]</a>, sobre 253 estudos, encontra <span class="num">g = 0,61</span> [0,58–0,65] para prática de recuperação contra outras práticas, com efeito equivalente em laboratório (<span class="num">0,62</span>) e em sala de aula (<span class="num">0,67</span>).
+          </div>
+          <p>O detalhe que importa para este sistema: o mesmo trabalho reporta efeito de <span class="num">0,53</span> para <em>transferência</em>, contra <span class="num">0,63</span> para retenção<a class="cit" href="#r3">[3]</a>. Recuperação ajuda a transferir, mas menos do que ajuda a lembrar — o que justifica a cota separada de transferência, e não deixá-la por conta do recall comum.</p>
+        </div>
+      </div>
+
+      <div class="rubrow">
+        <div class="rub-score s4">4<span>/5</span></div>
+        <div>
+          <div class="rub-name">Prática espaçada</div>
+          <div class="rub-base">Efeito do espaçamento<br><a class="cit" href="#r5">[5]</a><a class="cit" href="#r6">[6]</a><span class="grau g-forte">forte</span></div>
+        </div>
+        <div class="rub-body">
+          <div class="verdict-tag t-forte">Forte · parâmetro ainda caro</div>
+          <p>Mecanismo excelente e mantido. A ressalva do parecer anterior continua de pé: a retenção pedida está em 0,95.</p>
+          <div class="evidencia">
+            <div class="cab">Base empírica</div>
+            A síntese de Cepeda e colegas<a class="cit" href="#r5">[5]</a> cobre <span class="num">839</span> avaliações em <span class="num">317</span> experimentos e estabelece o achado que este sistema já respeita: o intervalo ótimo <strong>cresce junto com o horizonte de retenção desejado</strong> — quem quer lembrar por um ano precisa de intervalos maiores que quem quer lembrar por uma semana. Intervalos expansivos superam os uniformes.<a class="cit" href="#r5">[5]</a>
+            <br><br>
+            Sobre o parâmetro: os próprios mantenedores do FSRS recomendam escolher a retenção que <strong>minimiza a razão esforço/conhecimento</strong>, e a simulação costuma pousar entre <span class="num">0,85</span> e <span class="num">0,90</span>.<a class="cit" href="#r6">[6]</a> <span class="grau g-media">média</span>
+          </div>
+          <p>Na simulação que rodei com os pesos do modelo, num acervo de 120 cards: <strong>27 h/ano</strong> em 0,95 contra <strong>15 h/ano</strong> em 0,90. Doze horas de diferença para um aluno cujo objetivo declarado é retenção de longo prazo, não prova na semana que vem.</p>
+        </div>
+      </div>
+
+      <div class="rubrow">
+        <div class="rub-score s4">4<span>/5</span></div>
+        <div>
+          <div class="rub-name">Intercalação</div>
+          <div class="rub-base">Prática intercalada<br><a class="cit" href="#r7">[7]</a><a class="cit" href="#r8">[8]</a><a class="cit" href="#r9">[9]</a><span class="grau g-forte">forte</span></div>
+        </div>
+        <div class="rub-body">
+          <div class="verdict-tag t-forte">Vazio preenchido · era 1</div>
+          <p>Era o achado que eu levaria primeiro a uma banca, e foi resolvido — com uma correção de rota importante em relação à minha própria proposta.</p>
+          <div class="evidencia">
+            <div class="cab">Base empírica</div>
+            No ensaio randomizado de Rohrer e colegas<a class="cit" href="#r7">[7]</a>, com <span class="num">787</span> alunos, o grupo intercalado superou o em blocos com <span class="num">d = 0,83</span> [0,68–0,97]. Em Taylor &amp; Rohrer<a class="cit" href="#r8">[8]</a>, o desempenho na prova no dia seguinte foi <span class="num">77%</span> contra <span class="num">38%</span> (<span class="num">d = 1,21</span>).
+            <br><br>
+            E o dado que define tudo, de Rohrer &amp; Taylor<a class="cit" href="#r9">[9]</a>: intercalar <strong>triplicou</strong> a nota final (<span class="num">63%</span> vs. <span class="num">20%</span>) e ao mesmo tempo <strong>piorou o desempenho durante a prática</strong> (<span class="num">60%</span> vs. <span class="num">89%</span>, <span class="num">d = 1,06</span>). Sensação de fluência e aprendizado real caminhando em direções opostas, medido.
+          </div>
+          <p><strong>Onde o projeto me corrigiu.</strong> Eu havia sugerido puxar 2 conceitos de etapas dominadas para o recall. A implementação foi além: os conceitos intercalados saem de um campo <code>conecta_com</code> declarado no roadmap — cada etapa registra <em>com quais anteriores ela se relaciona e por quê</em>, com preferência explícita por conexões de contraste. Conceito antigo aleatório treina discriminação genérica; conceito declarado como oposto ou confundível treina a estrutura que o aluno precisa. É uma melhoria sobre o que eu propus.</p>
+          <p>Não chega a 5 por um motivo só: a intercalação atua na etapa 3 em diante e sobre pares declarados. Isso é intercalação dirigida, não a mistura ampla dos experimentos. É a escolha certa para um roadmap sequencial — mas é menos do que o teto.</p>
+          <div class="evidencia">
+            <div class="cab">Ressalva metodológica que registro por honestidade</div>
+            Parte do ganho atribuído à intercalação pode vir do <strong>espaçamento embutido</strong>: intercalar garante que duas práticas do mesmo conteúdo não sejam consecutivas.<a class="cit" href="#r7">[7]</a> A literatura ainda discute o quanto do efeito é discriminação e o quanto é espaçamento. Isso não muda a recomendação prática — muda o quanto se pode afirmar sobre o mecanismo.
+          </div>
+        </div>
+      </div>
+
+      <div class="rubrow">
+        <div class="rub-score s5">5<span>/5</span></div>
+        <div>
+          <div class="rub-name">Dificuldade desejável</div>
+          <div class="rub-base">Dificuldades desejáveis<br><a class="cit" href="#r1">[1]</a><a class="cit" href="#r10">[10]</a><span class="grau g-forte">forte</span></div>
+        </div>
+        <div class="rub-body">
+          <div class="verdict-tag t-forte">O melhor deste sistema · mantido</div>
+          <p>A política de dica continua sendo a coisa mais sofisticada que li aqui: a dica devolve contexto em vez de entregar a resposta, e o acerto assistido fica limitado à nota 2.</p>
+          <div class="evidencia">
+            <div class="cab">Por que isso é exatamente certo</div>
+            No modelo das duas forças<a class="cit" href="#r1">[1]</a>, o ganho em armazenamento é <strong>função do esforço de recuperação</strong>: quanto mais difícil a recuperação bem-sucedida, maior o ganho duradouro. Uma dica que entrega a resposta zera esse esforço; uma que devolve contexto o reduz sem anular.
+            <br><br>
+            E o registro separado importa porque o próprio aluno não distingue as duas coisas: a evidência de ilusão de competência<a class="cit" href="#r10">[10]</a> mostra que julgamentos de aprendizagem inflam justamente quando a informação está presente no estudo e ausente no teste. Guardar "lembrou com ajuda" como nota 2 é a tradução operacional desse achado.
+          </div>
+        </div>
+      </div>
+
+      <div class="rubrow">
+        <div class="rub-score s4">4<span>/5</span></div>
+        <div>
+          <div class="rub-name">Calibração metacognitiva</div>
+          <div class="rub-base">Viés de premonição<br><a class="cit" href="#r10">[10]</a><a class="cit" href="#r11">[11]</a><span class="grau g-forte">forte</span></div>
+        </div>
+        <div class="rub-body">
+          <div class="verdict-tag t-forte">Vazio preenchido · era 1</div>
+          <p>Era o achado que eu considerava mais importante do parecer anterior. Foi implementado como eu recomendei, e o relatório foi além do que eu pedi.</p>
+          <div class="evidencia">
+            <div class="cab">Base empírica</div>
+            Koriat &amp; Bjork<a class="cit" href="#r10">[10]</a> descrevem o <em>viés de premonição</em>: o julgamento de aprendizagem infla porque, no momento do estudo, a resposta está à vista — e no teste não estará. O aluno confunde "reconheço isto" com "conseguiria produzir isto".
+            <br><br>
+            O achado decisivo é o remédio: o viés <strong>é atenuado por experiência de teste</strong> e por adiar o julgamento.<a class="cit" href="#r10">[10]</a><a class="cit" href="#r11">[11]</a> Ou seja, pedir a previsão imediatamente antes de uma recuperação real, repetidamente, é precisamente a condição que corrige a miscalibração — não um enfeite motivacional.
+          </div>
+          <p><strong>A decisão de engenharia que eu destaco.</strong> O relatório separa <em>erro de calibração</em> (magnitude, em qualquer direção) de <em>viés</em> (direção). Isso não é preciosismo: um índice único com sinal faz o excesso de confiança numa faixa cancelar a falta em outra, e um aluno mal calibrado nos dois sentidos apareceria como bem calibrado. Verifiquei em três perfis sintéticos; o caso ambíguo é corretamente sinalizado como "erro alto, viés baixo", que é o pior cenário e o mais difícil de perceber.</p>
+          <p>Não chega a 5 porque a devolutiva ainda é retrospectiva. O passo seguinte — que não peço agora — seria usar a miscalibração para <strong>alocar</strong> revisão: o card que ele errou estando confiante merece voltar antes do que o modelo sozinho indicaria.</p>
+        </div>
+      </div>
+
+      <div class="rubrow">
+        <div class="rub-score s4">4<span>/5</span></div>
+        <div>
+          <div class="rub-name">Carga cognitiva</div>
+          <div class="rub-base">Teoria da carga cognitiva<br><a class="cit" href="#r12">[12]</a><a class="cit" href="#r13">[13]</a><span class="grau g-media">média</span></div>
+        </div>
+        <div class="rub-body">
+          <div class="verdict-tag t-forte">Bem cuidada · mantida</div>
+          <p>Recortar a fonte e subir só o trecho da etapa é redução de carga estranha — a memória de trabalho deixa de gastar capacidade localizando o que importa.<a class="cit" href="#r12">[12]</a> A trava de segurança do método socrático (cair para o método de apoio após três perguntas sem progresso) permanece bem fundamentada.</p>
+          <div class="evidencia">
+            <div class="cab">Base empírica</div>
+            Kirschner, Sweller &amp; Clark<a class="cit" href="#r13">[13]</a> argumentam, a partir da arquitetura cognitiva e das diferenças novato–especialista, que orientação mínima falha justamente com quem ainda não tem esquema formado. A trava do socrático é essa evidência escrita como condição de saída — e ter a condição no mesmo lugar que o roteiro é o que lhe dá chance de ser respeitada.
+          </div>
+          <p>Permanece o desconto pela composição do material de consumo: quatro das cinco peças padrão são recepção. A prévia estruturante que entrou agora tem base própria<a class="cit" href="#r14">[14]</a>, mas é <em>mais</em> recepção — e eu não a vejo como problema porque ela é curta e estrutural, não expositiva.</p>
+        </div>
+      </div>
+
+      <div class="rubrow">
+        <div class="rub-score s4">4<span>/5</span></div>
+        <div>
+          <div class="rub-name">Transferência</div>
+          <div class="rub-base">Estrutura profunda vs. superficial<br><a class="cit" href="#r15">[15]</a><a class="cit" href="#r16">[16]</a><span class="grau g-media">média</span></div>
+        </div>
+        <div class="rub-body">
+          <div class="verdict-tag t-forte">Endereçada · era 2</div>
+          <p>Duas engrenagens entraram: uma <strong>cota fixa</strong> de item de transferência em todo recall, independente do nível de rigor, e um <strong>portão N4</strong> para fechar etapa — cenário aberto, sustentado sob contestação, sem dica.</p>
+          <div class="evidencia">
+            <div class="cab">Base empírica</div>
+            A transferência falha quando o aluno codifica a <em>superfície</em> do problema em vez da estrutura profunda; o ganho vem de encontrar o mesmo princípio sob aparências diferentes.<a class="cit" href="#r15">[15]</a> Barnett &amp; Ceci<a class="cit" href="#r16">[16]</a> sistematizam as dimensões em que um contexto pode diferir do original — e mostram que "transferência" sem especificar a distância é uma palavra vazia.
+            <br><br>
+            Somando-se a isso, o efeito da prática de recuperação sobre transferência existe mas é <strong>menor</strong> que sobre retenção (<span class="num">0,53</span> vs. <span class="num">0,63</span>)<a class="cit" href="#r3">[3]</a> — o que justifica tratá-la com cota própria em vez de esperá-la como subproduto.
+          </div>
+          <p><strong>Sobre o portão, e por que eu apoio a escolha feita.</strong> Havia a opção de simplesmente subir o rigor padrão para o nível 4. O projeto recusou, com o argumento de que transferência distante logo após a aquisição produz principalmente fracasso. Concordo, e registro o grau: isso é <span class="grau g-teorica">teórica</span> — decorre do papel do conhecimento prévio na formação de esquema<a class="cit" href="#r17">[17]</a> e da própria taxonomia de distância de transferência<a class="cit" href="#r16">[16]</a>, mas não conheço ensaio que compare exatamente estas duas políticas. É uma inferência bem fundamentada, não um resultado.</p>
+          <p>Não chega a 5 porque a cota garante <em>frequência</em> de itens de transferência, não <em>qualidade</em>: quem julga se o caso é de fato uma superfície nova, e não o mesmo exemplo repintado, continua sendo o próprio agente.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Avaliação do processo de configuração</h2>
+    <p class="section-note">A entrevista inicial julgada como o que ela é: uma avaliação diagnóstica</p>
+
+    <div class="finding" style="border-top:2px solid var(--ink)">
+      <div class="f-meta"><span class="f-id">S-01</span><span class="verdict-tag t-forte">Virtude</span></div>
+      <div>
+        <h3>O modelo do aluno é injetado no gerador de material</h3>
+        <p>O perfil não fica guardado num canto: sobe como <strong>fonte</strong> para a ferramenta que produz o material. O modelo do aluno participa da geração, não só da conversa. Na maioria das plataformas que avaliei, o "perfil" alimenta um relatório e nada mais.</p>
+      </div>
+    </div>
+
+    <div class="finding">
+      <div class="f-meta"><span class="f-id">S-02</span><span class="verdict-tag t-medio">Validade · atenuado</span></div>
+      <div>
+        <h3>Pedir ao aluno que escolha o método continua sendo o mecanismo mais fraco — mas agora há um plano</h3>
+        <p>Reafirmo a distinção que quase todo mundo erra. <strong>O catálogo está certo:</strong> os seis métodos são procedimentos instrucionais com evidência própria, não modalidades sensoriais. Isso não tem relação com a ideia popular de "estilos de aprendizagem".</p>
+        <div class="evidencia">
+          <div class="cab">Base empírica</div>
+          Pashler, McDaniel, Rohrer &amp; Bjork<a class="cit" href="#r18">[18]</a> cunharam o termo <em>hipótese do casamento</em> para a ideia de que a instrução deve ser ajustada ao estilo declarado do aluno — e concluíram que <strong>não há base de evidência adequada</strong> para incorporá-la à prática educacional, com estudos que a contradizem frontalmente. Replicações posteriores mantiveram o resultado.<a class="cit" href="#r19">[19]</a> <span class="grau g-forte">forte</span>
+        </div>
+        <p>O que se aplica aqui não é o problema dos estilos sensoriais, mas o mesmo mecanismo: <strong>preferência declarada é um preditor fraco</strong>, e as pessoas preferem os métodos que produzem sensação de facilidade — que, pela evidência das outras alavancas, são frequentemente os que ensinam menos.</p>
+        <span class="label">O que mudou</span>
+        <div class="fix">A recomendação de submeter a escolha aos dados foi acolhida e está documentada. Ainda não roda — falta o gatilho automático. Mantenho como achado aberto, com severidade reduzida: agora é uma implementação pendente, não uma lacuna conceitual.</div>
+      </div>
+    </div>
+
+    <div class="finding">
+      <div class="f-meta"><span class="f-id">S-03</span><span class="verdict-tag t-fraco">Lacuna · aberto</span></div>
+      <div>
+        <h3>Continua sem linha de base: o sistema nunca mede o que o aluno já sabe</h3>
+        <p>Treze perguntas sobre quem o aluno é, como aprende e em que ritmo — e nenhuma sobre <strong>o que ele já domina do assunto</strong>. O roadmap é derivado da fonte, não do aluno.</p>
+        <div class="evidencia">
+          <div class="cab">Base empírica</div>
+          O conhecimento prévio é o preditor isolado mais forte de aprendizagem nova — é a premissa central da assimilação de Ausubel<a class="cit" href="#r17">[17]</a> e o motivo pelo qual a mesma instrução funciona para uns e falha para outros. Também é o que produz o <em>efeito de reversão pela expertise</em>: apoio instrucional que ajuda o novato atrapalha quem já tem esquema formado.<a class="cit" href="#r20">[20]</a> <span class="grau g-media">média</span>
+        </div>
+        <p>Consequências opostas e igualmente ruins: quem já sabe a etapa 1 gasta uma sessão sendo ensinado do zero e conclui que o sistema é lento; quem não tem o pré-requisito da etapa 3 trava e conclui que o problema é ele.</p>
+        <span class="label">O que eu faria</span>
+        <div class="fix">Uma sondagem de seis a oito itens em texto lacunado ao iniciar a matéria, cobrindo os conceitos-âncora de todas as etapas. Não vale nota e não entra no agendamento: serve para <strong>posicionar o ponto de partida</strong>. O instrumento já existe — é o mesmo formato de recall, apontado para outro momento.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Uma questão transversal</h2>
+    <p class="section-note">Validade da avaliação · parcialmente endereçada</p>
+    <div class="col">
+      <p>Registro de novo: <strong>quem ensina é quem avalia, e quem avalia registra a nota que alimenta o agendamento.</strong> Em contexto humano isso é normal. O que torna a situação diferente é que a nota não é só um retorno ao aluno — é a <em>entrada de um modelo matemático</em> que decide quando o conteúdo volta. Uma nota generosa empurra a revisão para longe e reduz a chance de o erro ser descoberto: o viés se auto-oculta.</p>
+      <p><strong>A recomendação que eu havia feito foi implementada.</strong> Cada avaliação agora registra, ao lado da nota, o número de tentativas e se houve dica — fatos objetivos ao lado de um julgamento subjetivo. Com eles, dá para detectar deriva: se a proporção de notas altas subir enquanto o uso de dica se mantém, alguma coisa afrouxou.</p>
+      <p>Isso não impede o viés; torna-o <strong>visível</strong>. Continua faltando o consumidor desses dados — um relatório que compare a série ao longo do tempo e avise. Os dados estão sendo coletados; ninguém ainda os lê com essa pergunta.</p>
+    </div>
+  </section>
+
+  <section class="closing">
+    <h2>Parecer final</h2>
+    <p class="section-note">Conclusão do avaliador · 2ª emissão</p>
+
+    <div class="verdict">
+      <div class="verdict-mark">Aprovado</div>
+      <p class="verdict-line">Um tutor que agora ensina <em>e mede</em> de acordo com a evidência — e cuja última fragilidade é não saber onde o aluno começa.</p>
+    </div>
+
+    <div class="col">
+      <p>Na primeira emissão eu disse que este sistema executava muito bem a parte difícil do ensino e devolvia ao aluno, intacta, a tarefa que ele não consegue cumprir sozinho: saber o que ainda não sabe. Essa frase não vale mais.</p>
+
+      <p><strong>O que mudou, e por que eu considero relevante.</strong> As duas correções não foram acréscimos de recurso — foram mudanças no que o sistema é capaz de perceber. A previsão de confiança antes de cada revelação instala, dentro do fluxo normal de estudo, exatamente a condição que a literatura aponta como corretiva do viés de premonição<a class="cit" href="#r10">[10]</a>: recuperação real, previsão imediatamente antes, repetição. E a integração cumulativa transformou um roadmap de silos sequenciais num mapa de conexões declaradas, onde a discriminação entre conceitos vizinhos é <em>treinada</em> e não apenas cobrada.</p>
+
+      <p><strong>Onde o projeto melhorou minha própria proposta.</strong> Eu havia sugerido puxar conceitos antigos aleatórios para o recall. A implementação exigiu que as conexões fossem declaradas no roadmap, com preferência por contraste. É melhor: a intercalação passa a treinar a estrutura específica do domínio em vez de discriminação genérica. Registro porque avaliador que não reconhece quando é corrigido não serve para muita coisa.</p>
+
+      <p class="quote">A intercalação é o preço que ninguém quer pagar: ela piora a sessão de hoje para melhorar o exame de daqui a três meses. Sistemas que otimizam a sensação da sessão nunca a implementam. Este implementou.</p>
+
+      <h3>O que ainda falta</h3>
+
+      <p>Uma coisa, e ela é a mesma de antes com outra roupa: <strong>o sistema mede o aluno o tempo todo, menos no começo.</strong> Não há sondagem de conhecimento prévio. O roadmap começa onde o livro começa, não onde o aluno está — e o conhecimento prévio é o preditor isolado mais forte que temos.<a class="cit" href="#r17">[17]</a><a class="cit" href="#r20">[20]</a></p>
+
+      <p>As outras duas pendências são do mesmo tipo, e desenham um padrão: <strong>o sistema já coleta os dados que responderiam suas próprias perguntas em aberto, e ainda não os lê.</strong> A escolha de método está gravada como preferência e nunca é confrontada com o desempenho. O uso de dica e o número de tentativas são registrados e ninguém compara a série ao longo do tempo. Não falta instrumentação — falta leitura.</p>
+
+      <h3>Se eu pudesse pedir três coisas</h3>
+
+      <ul class="plain">
+        <li><strong>Sondagem de conhecimento prévio ao iniciar a matéria</strong> (S-03). Seis itens no formato que já existe. É a única lacuna conceitual que resta.</li>
+        <li><strong>Ler os dados de método e de dica ao longo do tempo</strong> (S-02 e a questão transversal). Duas consultas sobre uma tabela que já está sendo preenchida.</li>
+        <li><strong>Usar a miscalibração para alocar revisão.</strong> O card errado com confiança alta merece voltar antes do que o modelo sozinho indicaria. É o passo natural depois de medir calibração — e ninguém que eu avaliei chegou nele.</li>
+      </ul>
+
+      <p style="margin-top:1.6rem">Nenhuma das três é grande. Nenhuma exige tocar na arquitetura. E, diferentemente da primeira emissão, nenhuma delas é sobre o que o sistema faz com o aluno que está na frente dele — são todas sobre o sistema aprender com o que já viu.</p>
+    </div>
+
+    <div class="sign">
+      <div class="sign-name">Heitor Maia</div>
+      <div class="sign-role">Psicólogo cognitivo · Rubrica das 7 alavancas</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Referências</h2>
+    <p class="section-note">Grau de evidência declarado por afirmação, não por fonte</p>
+    <div class="refs">
+
+      <div class="ref" id="r1"><div class="ref-n">[1]</div><div>
+        <span class="ref-cit">Bjork, R. A., &amp; Bjork, E. L. — <em>A new theory of disuse and an old theory of stimulus fluctuation</em> (1992); e <em>Making things hard on yourself, but in a good way: creating desirable difficulties to enhance learning</em> (2011).</span>
+        <span class="ref-o">A distinção entre força de armazenamento e força de recuperação, e o princípio de que o ganho duradouro é função do esforço de recuperação. Sustenta a lente de todo este parecer e a nota de "dificuldade desejável".</span>
+      </div></div>
+
+      <div class="ref" id="r2"><div class="ref-n">[2]</div><div>
+        <span class="ref-cit">Roediger, H. L., &amp; Karpicke, J. D. (2006). <em>Test-Enhanced Learning: Taking Memory Tests Improves Long-Term Retention.</em> Psychological Science, 17(3), 249–255.</span>
+        <span class="ref-o"><a href="https://journals.sagepub.com/doi/10.1111/j.1467-9280.2006.01693.x">journals.sagepub.com</a> — restudo vence em prova imediata, perde em prova adiada, e ainda assim aumenta a confiança do aluno.</span>
+      </div></div>
+
+      <div class="ref" id="r3"><div class="ref-n">[3]</div><div>
+        <span class="ref-cit">Adesope, O. O., Trevisan, D. A., &amp; Sundararajan, N. (2017). <em>Rethinking the Use of Tests: A Meta-Analysis of Practice Testing.</em> Review of Educational Research, 87(3).</span>
+        <span class="ref-o"><a href="https://www.researchgate.net/publication/315706448_Rethinking_the_Use_of_Tests_A_Meta-Analysis_of_Practice_Testing">researchgate.net</a> — g = 0,61 [0,58–0,65]; efeito similar em laboratório e sala; 0,63 retenção vs. 0,53 transferência.</span>
+      </div></div>
+
+      <div class="ref" id="r4"><div class="ref-n">[4]</div><div>
+        <span class="ref-cit">Dunlosky, J., Rawson, K. A., Marsh, E. J., Nathan, M. J., &amp; Willingham, D. T. (2013). <em>Improving Students' Learning With Effective Learning Techniques.</em> Psychological Science in the Public Interest, 14(1).</span>
+        <span class="ref-o">Classifica prática de recuperação e prática distribuída como as duas técnicas de <strong>alta utilidade</strong>; releitura e grifo ficam em baixa utilidade.</span>
+      </div></div>
+
+      <div class="ref" id="r5"><div class="ref-n">[5]</div><div>
+        <span class="ref-cit">Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., &amp; Rohrer, D. (2006). <em>Distributed practice in verbal recall tasks: A review and quantitative synthesis.</em> Psychological Bulletin, 132(3), 354–380.</span>
+        <span class="ref-o"><a href="https://augmentingcognition.com/assets/Cepeda2006.pdf">augmentingcognition.com</a> — 839 avaliações em 317 experimentos; o intervalo ótimo cresce com o horizonte de retenção; intervalos expansivos superam os uniformes.</span>
+      </div></div>
+
+      <div class="ref" id="r6"><div class="ref-n">[6]</div><div>
+        <span class="ref-cit">Open Spaced Repetition — <em>The Optimal Retention</em> (documentação do FSRS).</span>
+        <span class="ref-o"><a href="https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-optimal-retention">github.com/open-spaced-repetition</a> — recomenda minimizar a razão esforço/conhecimento; a simulação costuma pousar entre 0,85 e 0,90. Documentação técnica, não literatura revisada por pares.</span>
+      </div></div>
+
+      <div class="ref" id="r7"><div class="ref-n">[7]</div><div>
+        <span class="ref-cit">Rohrer, D., Dedrick, R. F., Hartwig, M. K., &amp; Cheung, C.-N. (2020). <em>A randomized controlled trial of interleaved mathematics practice.</em> Journal of Educational Psychology, 112(1), 40–52.</span>
+        <span class="ref-o"><a href="https://gwern.net/doc/psychology/spaced-repetition/2019-rohrer.pdf">gwern.net</a> — 787 alunos, d = 0,83 [0,68–0,97]. Também levanta a ressalva de que parte do efeito pode vir do espaçamento embutido na intercalação.</span>
+      </div></div>
+
+      <div class="ref" id="r8"><div class="ref-n">[8]</div><div>
+        <span class="ref-cit">Taylor, K., &amp; Rohrer, D. (2010). <em>The effects of interleaved practice.</em> Applied Cognitive Psychology, 24(6), 837–848.</span>
+        <span class="ref-o"><a href="http://uweb.cas.usf.edu/~drohrer/pdfs/Taylor&Rohrer2010ACP.pdf">uweb.cas.usf.edu</a> — 77% vs. 38% na prova do dia seguinte (d = 1,21).</span>
+      </div></div>
+
+      <div class="ref" id="r9"><div class="ref-n">[9]</div><div>
+        <span class="ref-cit">Rohrer, D., &amp; Taylor, K. (2007). <em>The shuffling of mathematics problems improves learning.</em> Instructional Science, 35, 481–498.</span>
+        <span class="ref-o">63% vs. 20% na prova (d = 1,34) com <strong>pior</strong> desempenho durante a prática (60% vs. 89%, d = 1,06). É a demonstração direta de que fluência na sessão e aprendizado real divergem.</span>
+      </div></div>
+
+      <div class="ref" id="r10"><div class="ref-n">[10]</div><div>
+        <span class="ref-cit">Koriat, A., &amp; Bjork, R. A. (2005). <em>Illusions of competence in monitoring one's knowledge during study.</em> JEP: LMC, 31(2); e (2006) <em>Illusions of competence during study can be remedied…</em> Memory &amp; Cognition, 34(5).</span>
+        <span class="ref-o"><a href="https://bjorklab.psych.ucla.edu/wp-content/uploads/sites/13/2016/07/Koriat_RBjork_2005.pdf">bjorklab.psych.ucla.edu</a> · <a href="https://pubmed.ncbi.nlm.nih.gov/17128596/">pubmed</a> — o viés de premonição e, decisivamente, o fato de ser atenuado por experiência de teste e por adiar o julgamento.</span>
+      </div></div>
+
+      <div class="ref" id="r11"><div class="ref-n">[11]</div><div>
+        <span class="ref-cit">Castel, A. D., McCabe, D. P., &amp; Roediger, H. L. (2007). <em>Illusions of competence and overestimation of associative memory for identical items.</em> Psychonomic Bulletin &amp; Review, 14(1).</span>
+        <span class="ref-o"><a href="http://psychnet.wustl.edu/memory/wp-content/uploads/2018/04/Castel-et-al-2007_PBR.pdf">psychnet.wustl.edu</a> — convergente sobre superestimação sistemática do que se julga saber.</span>
+      </div></div>
+
+      <div class="ref" id="r12"><div class="ref-n">[12]</div><div>
+        <span class="ref-cit">Sweller, J. (1988; 2011). <em>Cognitive load theory.</em></span>
+        <span class="ref-o">Carga estranha consome memória de trabalho que deveria ir para a construção do esquema. Sustenta o juízo sobre o recorte curado da fonte.</span>
+      </div></div>
+
+      <div class="ref" id="r13"><div class="ref-n">[13]</div><div>
+        <span class="ref-cit">Kirschner, P. A., Sweller, J., &amp; Clark, R. E. (2006). <em>Why Minimal Guidance During Instruction Does Not Work.</em> Educational Psychologist, 41(2), 75–86.</span>
+        <span class="ref-o"><a href="https://www.tandfonline.com/doi/pdf/10.1207/s15326985ep4102_1">tandfonline.com</a> — orientação mínima falha com quem ainda não tem esquema formado. Sustenta a trave de segurança do método socrático.</span>
+      </div></div>
+
+      <div class="ref" id="r14"><div class="ref-n">[14]</div><div>
+        <span class="ref-cit">Ausubel, D. P. (1960; 1968) — organizadores prévios; e Mayer, R. E. — princípio do pré-treinamento.</span>
+        <span class="ref-o">Uma estrutura apresentada antes do detalhe facilita a assimilação do que vem. Sustenta a prévia estruturante — <strong>desde que</strong> ela permaneça estrutural e curta, e não vire exposição antecipada.</span>
+      </div></div>
+
+      <div class="ref" id="r15"><div class="ref-n">[15]</div><div>
+        <span class="ref-cit">Gick, M. L., &amp; Holyoak, K. J. (1983). <em>Schema induction and analogical transfer.</em> Cognitive Psychology, 15(1).</span>
+        <span class="ref-o">A transferência falha quando o aluno codifica a superfície em vez da estrutura profunda; múltiplos exemplos com superfícies distintas induzem o esquema.</span>
+      </div></div>
+
+      <div class="ref" id="r16"><div class="ref-n">[16]</div><div>
+        <span class="ref-cit">Barnett, S. M., &amp; Ceci, S. J. (2002). <em>When and where do we apply what we learn? A taxonomy for far transfer.</em> Psychological Bulletin, 128(4).</span>
+        <span class="ref-o">Sistematiza as dimensões de distância entre contextos. "Transferência" sem especificar a distância não diz nada.</span>
+      </div></div>
+
+      <div class="ref" id="r17"><div class="ref-n">[17]</div><div>
+        <span class="ref-cit">Ausubel, D. P. (1968). <em>Educational Psychology: A Cognitive View.</em></span>
+        <span class="ref-o">"O fator isolado mais importante que influencia a aprendizagem é aquilo que o aluno já sabe." Sustenta o achado S-03.</span>
+      </div></div>
+
+      <div class="ref" id="r18"><div class="ref-n">[18]</div><div>
+        <span class="ref-cit">Pashler, H., McDaniel, M., Rohrer, D., &amp; Bjork, R. (2008). <em>Learning Styles: Concepts and Evidence.</em> Psychological Science in the Public Interest, 9(3).</span>
+        <span class="ref-o"><a href="https://journals.sagepub.com/doi/10.1111/j.1539-6053.2009.01038.x">journals.sagepub.com</a> — cunha a "hipótese do casamento" e conclui que não há base de evidência adequada para adotá-la.</span>
+      </div></div>
+
+      <div class="ref" id="r19"><div class="ref-n">[19]</div><div>
+        <span class="ref-cit">Rogowsky, B. A., Calhoun, B. M., &amp; Tallal, P. (2015). <em>Matching Learning Style to Instructional Method: Effects on Comprehension.</em> Journal of Educational Psychology, 107(1).</span>
+        <span class="ref-o"><a href="https://www.apa.org/pubs/journals/features/edu-a0037478.pdf">apa.org</a> — teste direto da hipótese do casamento, sem suporte para ela.</span>
+      </div></div>
+
+      <div class="ref" id="r20"><div class="ref-n">[20]</div><div>
+        <span class="ref-cit">Kalyuga, S., Ayres, P., Chandler, P., &amp; Sweller, J. (2003). <em>The Expertise Reversal Effect.</em> Educational Psychologist, 38(1).</span>
+        <span class="ref-o">Apoio instrucional que ajuda o novato atrapalha quem já tem esquema. É a razão técnica pela qual ignorar o conhecimento prévio prejudica os dois extremos.</span>
+      </div></div>
+
+    </div>
+  </section>
+
+  <footer>
+    Parecer técnico de qualidade de aprendizagem · rubrica das 7 alavancas · 2ª emissão<br>
+    Objeto: workspace Aprendizagem Inteligente, commit 32a6837 · 26 de julho de 2026<br>
+    Prof. Heitor Maia — avaliador<br><br>
+    Os graus de evidência (<strong>forte</strong> / <strong>média</strong> / <strong>teórica</strong>) qualificam a <em>afirmação</em>, não a fonte: um trabalho sólido pode sustentar fortemente um ponto e apenas sugerir outro. Onde o juízo é inferência a partir de um modelo aceito, sem teste direto do caso, isso está dito.
+  </footer>
+
+</div>
