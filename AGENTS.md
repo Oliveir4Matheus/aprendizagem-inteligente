@@ -102,6 +102,7 @@ Se o aluno disser algo do tipo *"da próxima vez faça X"*, *"não gere Y"*, *"p
 | `estudo/progresso/_index.md` | Mapa de todas as matérias |
 | `estudo/progresso/<materia>.md` | Ledger da matéria (estado, 80/20, pontos fracos, log) |
 | `estudo/progresso/<materia>-roadmap.md` | Trilha da matéria (etapas + conceitos obrigatórios) |
+| `estudo/progresso/<materia>-mapa.md` | Mapa conceitual (Mermaid): onde cada conceito se encaixa e em que etapa futura reaparece |
 | `estudo/progresso/srs.db` | Flashcards + FSRS (repetição espaçada) |
 | `estudo/progresso/jornada_do_heroi.jpg` | Badge de conquista para o LinkedIn |
 | `estudo/JORNADA.md` | Mapa visual da jornada na matéria |

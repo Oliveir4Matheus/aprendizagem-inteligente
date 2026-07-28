@@ -134,6 +134,7 @@ aprendizagem-inteligente/
         ├── _index.md          ← mapa das matérias
         ├── <materia>.md       ← ledger: estado, 80/20, pontos fracos, log
         ├── <materia>-roadmap.md ← trilha: etapas + conceitos obrigatórios
+        ├── <materia>-mapa.md   ← mapa conceitual: onde cada conceito se encaixa
         ├── srs.db             ← flashcards + FSRS
         └── jornada_do_heroi.jpg ← badge de conquista pro LinkedIn
 ```

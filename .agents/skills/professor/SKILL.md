@@ -37,6 +37,7 @@ ensino. Ela não pode competir com o conteúdo por atenção.
 - `estudo/progresso/_index.md` — mapa de todas as matérias e status.
 - `estudo/progresso/<materia>.md` — **ledger** da matéria (frontmatter YAML = estado; corpo = log).
 - `estudo/progresso/<materia>-roadmap.md` — **trilha** da matéria: etapas + conceitos obrigatórios de cada uma.
+- `estudo/progresso/<materia>-mapa.md` — **mapa conceitual** (Mermaid): onde cada conceito se encaixa e em que etapa futura ele reaparece. Cumulativo — cresce a cada conceito dominado.
 - `estudo/progresso/srs.db` — SQLite com FSRS v5. **Fonte da verdade do que o aluno já domina.**
 - `estudo/documentos/` — fontes brutas da matéria + os recortes curados por etapa.
 
@@ -116,6 +117,8 @@ Dispara com 10+ dias sem sessão **ou** backlog acima de 15 cards. A sessão de 
 2. Abra o **roadmap** e extraia três coisas da etapa atual: a **lista de conceitos obrigatórios**, o que está **fora de escopo**, e os campos **`conecta_com`** e **`prepara_para`**. Os dois últimos são o que impede as etapas de virarem silos.
 3. Defina o **80/20 da etapa** — os poucos conceitos que puxam o resto.
    **Abra amarrando no que já foi dominado.** Antes do conteúdo novo, uma ou duas frases usando o `conecta_com`: *"isto é o mesmo mecanismo do \<conceito da etapa 2\>, aplicado a outra coisa"* ou *"cuidado: parece o \<conceito X\>, mas o critério é oposto"*. Conhecimento novo gruda no que já existe; sem a amarra, ele fica solto.
+
+   **Abra o mapa conceitual junto** (`estudo/progresso/<materia>-mapa.md`) e mostre ao aluno **onde a etapa nova encaixa** no que ele já sabe. A amarra dita em voz alta desaparece; a amarra desenhada fica. Se o mapa já tem pontes apontando para esta etapa, é a hora de cobrá-las: *"lembra que o \<conceito X\> ia reaparecer aqui? É agora."*
 4. **Recorte a fonte.** Não suba o arquivo bruto completo (`estudo/documentos/<livro>.pdf`) como source. Extraia dele **só o conteúdo da etapa atual** e salve em `estudo/documentos/<materia>-<etapa>.md` — curado, no idioma do perfil, organizado pelos conceitos obrigatórios. É esse `.md` que vira source. Isso mantém os artefatos focados e impede a IA de vazar para etapas futuras.
 5. Via ferramentas do MCP `notebooklm`:
    - Garanta que existe um notebook da matéria; se não, crie-o.
@@ -191,6 +194,22 @@ Ele consome no NotebookLM (áudio no deslocamento, quiz, Q&A com citação). Voc
    > **O portão N4.** O dia a dia roda no nível de rigor do perfil (padrão N3). Para fechar uma etapa, porém, o aluno precisa passar em **pelo menos 2 itens no formato N4** — cenário aberto, resposta sustentada sob contestação — **sem dica**. Rigor alto o tempo todo produz principalmente fracasso, porque transferência distante logo após a aquisição é cedo demais; rigor alto **no portão** garante que "dominado" signifique alguma coisa. Registre esses itens com `tipo_item = 'portao'`.
    >
    > Não passou no portão: a etapa continua `em_andamento`, o que falhou vira `pontos_fracos`, e o FSRS traz de volta. Não é reprovação — é o critério fazendo o trabalho dele.
+
+5b. **Atualize o mapa conceitual** (`estudo/progresso/<materia>-mapa.md`). Todo conceito novo dominado entra no mapa **na mesma sessão em que é dominado** — não no fim da etapa.
+
+   O mapa responde a uma pergunta que o roadmap não responde: **onde cada coisa se encaixa**. O roadmap é a ordem em que se estuda; o mapa é como os conceitos se ligam entre si e em que etapa futura cada um reaparece. Sem ele, cada etapa vira um silo na cabeça do aluno — e a matéria vira lista, não estrutura.
+
+   | O que mudou | O que fazer no mapa |
+   |---|---|
+   | Conceito dominado | Vira **nó** no diagrama da etapa dele, com a cor do status |
+   | `prepara_para` do roadmap | Vira **ponte** (`-.->`) para a fase futura, **com o rótulo do porquê** — a ponte sem o motivo não ensina nada |
+   | Erro no recall | O nó ganha **⚠️** + uma linha na seção de pontos fracos do mapa |
+   | Acerto na revisão seguinte | O **⚠️** sai |
+   | Etapa fechada no portão N4 | Todos os nós dela viram "dominado"; a próxima etapa vira "em andamento" |
+
+   **Formato: Mermaid, dentro de um `.md`.** É texto — então cresce de forma incremental e versionável. Imagem teria que ser refeita inteira a cada conceito, e o mapa mudaria toda sessão. Se o arquivo não existir ainda, crie-o com três diagramas: **o território** (o esqueleto da matéria + status), **as pontes** (onde cada conceito reaparece) e **o zoom da etapa atual**.
+
+   > **Nunca reescreva o mapa do zero.** Ele é cumulativo por definição — é isso que o torna útil. Reescrever perde as pontes já desenhadas e o histórico de ⚠️.
 6. Adicione uma linha em `## Log de aprendizado` (data + o que rolou + recall + nº de cards). Atualize `atualizado:`, **`ultima_sessao:`**, e **limpe `fase2_iniciada_em:`** — a Fase 2 se fechou. Atualize o `_index.md`.
 7. **Prévia estruturante.** Fechada a etapa, apresente em **2 a 3 frases** o que vem, usando o `prepara_para` do roadmap — e diga **como o que ele acabou de aprender é pré-requisito daquilo**.
 

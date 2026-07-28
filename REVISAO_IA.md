@@ -303,6 +303,29 @@ print(f"{added} cards adicionados ao SRS")
 
 ---
 
+## Variar cards já dominados
+
+Quando um card recebe **rating 4** numa revisão, ou um tópico é marcado `dominado` no
+ledger, gere **até 2 cards variantes** do mesmo conceito — mesma resposta correta,
+cenário/fraseado diferente do original. O objetivo é reforçar sem deixar o aluno
+decorar a redação literal do `front` em vez do conceito.
+
+> **O card original NUNCA é removido nem substituído.** Ele continua na fila normal
+> de repetição espaçada, com seu próprio `due_date`/`stability`, exatamente como
+> antes. Os variantes são cards **novos e independentes**, adicionados ao lado dele —
+> a ideia é ter 3 ângulos do mesmo conceito circulando no SRS, não trocar 1 por 1.
+> Se um variante falhar mesmo com o original dominado, é sinal de que a lacuna era
+> de redação/decoreba, não do conceito.
+
+- Variante muda o **cenário de superfície** (outro setor, outro exemplo), não o
+  conceito nem a resposta certa.
+- Respeite o teto de 2 — mais que isso infla o banco sem ganho de retenção.
+- Aplique o mesmo dedupe por `front` do bloco "Adicionar cards novos ao banco" acima.
+- Registre a origem: `tags` da variante inclui o mesmo tópico do card original, para
+  o relatório de calibração conseguir agrupá-los.
+
+---
+
 ## Ver estatísticas rápidas
 
 ```python
