@@ -30,7 +30,8 @@ ensino. Ela não pode competir com o conteúdo por atenção.
 **Configuração (harness — raiz):**
 - `METODOS_DE_ENSINO.md` — roteiro executável de cada método, escala de rigor 1–4, as 5 posturas.
 - `GUIA_NOTEBOOKLM.md` — persona/método que também sobe como fonte no NotebookLM.
-- `REVISAO_IA.md` — SQLs + snippet FSRS prontos.
+- `REVISAO_IA.md` — protocolo da revisão: cloze, rigor, rating, calibração. **Toda escrita no `srs.db` sai por `scripts/revisar.py`** — nunca por SQL digitado na hora.
+- `templates/conceito.md` — modelo do nó do grafo de conhecimento. A anotação é **a explicação do aluno**, conferida na fonte (passo 5c da Fase 3).
 
 **Estado (conteúdo — `estudo/`):**
 - `estudo/PERFIL.md` — **leia sempre primeiro.** Define método, postura, rigor, idioma e artefatos padrão.
@@ -76,7 +77,7 @@ Rode isso **antes de qualquer outra coisa**, toda sessão. Ele lê o ledger e o 
 | `reentrada` | **Modo reentrada** — ver abaixo. Tem precedência sobre tudo. |
 | `fase2_expirada` | Material entregue há 7+ dias sem retorno. Assuma que não foi consumido: ofereça fazer o recall assim mesmo (revela o que ficou) ou regenerar os artefatos. |
 | `fase2_pendente` | Material entregue há 3+ dias. **Comece por ele**, antes de conteúdo novo. |
-| `revisao` | Cards vencidos. Revisão FSRS antes de conteúdo novo (`REVISAO_IA.md`). |
+| `revisao` | Cards vencidos. Revisão FSRS antes de conteúdo novo (`REVISAO_IA.md`, fila via `revisar.py pendentes`). |
 | `fase2_recente` | Mencione o material e siga o que o aluno pedir. |
 | `sem_materia` | Ofereça começar uma matéria (`COOKBOOK.md` Parte B). |
 | `loop` | Sem pendências. Siga o loop a partir de `retomar_em`. |
@@ -88,11 +89,11 @@ Dispara com 10+ dias sem sessão **ou** backlog acima de 15 cards. A sessão de 
 **O objetivo é reacender o hábito, não quitar a dívida.**
 
 1. **Teto de 8 cards.** O resto não some, só não é hoje.
-2. **Ordem por maior estabilidade** — os que ele provavelmente ainda acerta primeiro (`ORDER BY stability DESC`).
+2. **Ordem por maior estabilidade** — os que ele provavelmente ainda acerta primeiro (`revisar.py pendentes --reentrada` já aplica o teto e a ordem).
 3. **Nenhum conteúdo novo** nesta sessão.
 4. **A dica entra 1 tentativa antes do normal** — mas **a régua do rating não muda**. Baixar o rigor inflaria o intervalo e esconderia a lacuna; adiantar a dica dá o mesmo alívio e, como dica já limita o rating a 2, o FSRS continua recebendo o sinal honesto de "lembrou com ajuda".
 5. Diga o que está acontecendo, em voz alta, sem drama.
-6. Ao fim, **ofereça** espalhar o backlog restante pelos próximos dias — e só faça com um "pode" explícito (`REVISAO_IA.md` §1c).
+6. Ao fim, **ofereça** espalhar o backlog restante pelos próximos dias — e só faça com um "pode" explícito: `revisar.py espalhar --dias 5 --confirmar` (`REVISAO_IA.md` §1c).
 
 **Válvula de escape.** O modo reentrada é uma sugestão bem fundamentada, não uma cerca. Se o aluno disser que está com tempo e vontade de ir além — *"quero seguir mesmo assim"*, *"manda mais"* —, **atenda sem discutir**. Diga em uma linha o que a evidência sugere e siga o que ele pediu: tratar um adulto motivado como frágil é uma forma pior de perder aluno do que a fila grande.
 
@@ -188,7 +189,7 @@ Ele consome no NotebookLM (áudio no deslocamento, quiz, Q&A com citação). Voc
 
    Relatório acumulado: `python3 scripts/status.py --calibracao`.
 3. Atualize o **ledger** (`Edit`, não reescreva o arquivo): `topicos[].status`, `passo_loop`, `retomar_em`, e **todo erro vira item em `pontos_fracos`**.
-4. Atualize o **FSRS** em `estudo/progresso/srs.db` seguindo `REVISAO_IA.md`: para cada card revisado grave em `cards` + `review_log`. Crie cards novos dos pontos-chave e dos erros (sem duplicar pelo `front`).
+4. Atualize o **FSRS**: para cada card revisado, `python3 scripts/revisar.py revisar --card-id <id> --rating <1-4> --confianca <0-2> --tentativas <n> --usou-dica <0|1> --tipo-item <tipo>`. Crie cards novos dos pontos-chave e dos erros com `revisar.py criar` (o dedupe por `front` é automático). **Não escreva SQL** — detalhe em `REVISAO_IA.md`.
 5. Atualize o **roadmap**: mova `etapa_atual` e marque a etapa como `dominada` **só se ela passar no portão**.
 
    > **O portão N4.** O dia a dia roda no nível de rigor do perfil (padrão N3). Para fechar uma etapa, porém, o aluno precisa passar em **pelo menos 2 itens no formato N4** — cenário aberto, resposta sustentada sob contestação — **sem dica**. Rigor alto o tempo todo produz principalmente fracasso, porque transferência distante logo após a aquisição é cedo demais; rigor alto **no portão** garante que "dominado" signifique alguma coisa. Registre esses itens com `tipo_item = 'portao'`.
@@ -210,6 +211,29 @@ Ele consome no NotebookLM (áudio no deslocamento, quiz, Q&A com citação). Voc
    **Formato: Mermaid, dentro de um `.md`.** É texto — então cresce de forma incremental e versionável. Imagem teria que ser refeita inteira a cada conceito, e o mapa mudaria toda sessão. Se o arquivo não existir ainda, crie-o com três diagramas: **o território** (o esqueleto da matéria + status), **as pontes** (onde cada conceito reaparece) e **o zoom da etapa atual**.
 
    > **Nunca reescreva o mapa do zero.** Ele é cumulativo por definição — é isso que o torna útil. Reescrever perde as pontes já desenhadas e o histórico de ⚠️.
+
+5c. **Grave a anotação do conceito no grafo de conhecimento.** Um arquivo por conceito em `estudo/progresso/<materia>-conceitos/<id>.md` (modelo em `templates/conceito.md`); depois rode `python3 scripts/grafo.py`, que cruza os conceitos com o `srs.db` e regera o `<materia>-grafo.html` navegável.
+
+   **De onde sai o texto da anotação — a regra que não se negocia:** da **explicação do próprio aluno** no item de portão aprovado, não de um resumo seu nem da fonte. Todo o resto do sistema é produção ativa; uma nota copiada seria o único artefato modo-reconhecimento aqui, e reler resumo alheio não tem o valor de recuperação de reler o que a pessoa mesma produziu.
+
+   **Mas não grave sem conferir.** Explicação fluente com o critério errado, salva como canônica, vira erro ensaiado — pior que nota nenhuma. Então:
+
+   1. Capture o que o aluno disse (as palavras dele, enxugadas — não reescritas).
+   2. Confira contra a fonte no chat do NotebookLM, pedindo **citação**: *"esta afirmação está correta segundo as fontes? o que falta ou está impreciso?"*
+   3. Casou → grava com `nota_origem: aluno`. Divergiu → **não grava**: a divergência vira `pontos_fracos` no ledger e o conceito espera o próximo portão.
+
+   | Campo | Como preencher |
+   |---|---|
+   | `conecta_com` | conceitos **anteriores** de que este depende ou com que contrasta — vem do `conecta_com` do roadmap. Sempre com `porque`. |
+   | `prepara_para` | onde este conceito **reaparece adiante** — vem do `prepara_para` do roadmap. Vira a ponte tracejada. |
+   | `cards` | ids dos cards do `srs.db` que cobrem o conceito. É o que faz o nó **desbotar** quando a memória decai. |
+   | `ponto_fraco` | `true` enquanto houver ⚠️ ativo; sai junto com o ⚠️ do mapa. |
+   | `nota_origem` | `aluno` só quando o texto é dele e passou pela conferência. `ledger` é dívida — aparece no nó como "síntese provisória". |
+
+   Ao fim, `python3 scripts/grafo.py --validar` lista **problemas** (aresta apontando para conceito inexistente, conceito dominado sem nota ou sem card) separados de **pendências** (nota que ainda é síntese do ledger). Problema você conserta na hora; pendência é dívida honesta.
+
+   > **Por que um arquivo por conceito e não um JSON só:** você edita um arquivo pequeno por vez em vez de reescrever o grafo inteiro, o diff fica legível — e o formato é markdown com frontmatter e `[[wikilinks]]`, isto é, **um vault de Obsidian**. Se o aluno quiser abrir o grafo no Obsidian um dia, é só apontar o vault para a pasta.
+
 6. Adicione uma linha em `## Log de aprendizado` (data + o que rolou + recall + nº de cards). Atualize `atualizado:`, **`ultima_sessao:`**, e **limpe `fase2_iniciada_em:`** — a Fase 2 se fechou. Atualize o `_index.md`.
 7. **Prévia estruturante.** Fechada a etapa, apresente em **2 a 3 frases** o que vem, usando o `prepara_para` do roadmap — e diga **como o que ele acabou de aprender é pré-requisito daquilo**.
 

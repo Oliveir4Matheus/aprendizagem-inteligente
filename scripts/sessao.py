@@ -7,7 +7,7 @@ sessao.py — cronômetro da sessão de estudo, em blocos de foco.
     python3 scripts/sessao.py iniciar --bloco 50 --pausa 10 --blocos 3
     python3 scripts/sessao.py iniciar --tipo recall
     python3 scripts/sessao.py fim                      # fecha e resume
-    python3 scripts/sessao.py fim --absorvido "RTY e COPQ ficaram; SIPOC não"
+    python3 scripts/sessao.py fim --absorvido "<conceito A> ficou; <conceito B> não"
     python3 scripts/sessao.py agora                    # o que está aberto
 
 Não há contagem regressiva no terminal: isso travaria o shell e o agente, e você

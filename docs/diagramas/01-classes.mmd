@@ -70,11 +70,40 @@ classDiagram
     }
 
     class SRS {
+        <<srs.db>>
         +Path db
-        +buscarVencidos(hoje) List~Card~
-        +buscarReentrada(teto) List~Card~
-        +gravarRevisao(card, rating)
-        +criarCard(front, back)
+        +List~Card~ cards
+        +List~ReviewLog~ reviewLog
+    }
+
+    class Revisar {
+        <<scripts/revisar.py — ÚNICO ponto de escrita>>
+        +List~float~ W
+        +float RETENCAO_ALVO
+        +pendentes(reentrada) List~Card~
+        +revisar(cardId, rating, confianca, tentativas, usouDica, tipoItem)
+        +criar(front, back, deck, subject, tags)
+        +espalhar(dias, confirmado)
+        +calcularFSRS(state, d, s, lastReview, rating) Agendamento
+    }
+
+    class Agendamento {
+        +int state
+        +float difficulty
+        +float stability
+        +int interval
+        +Date dueDate
+    }
+
+    class ReviewLog {
+        +Date reviewDate
+        +int rating
+        +int elapsedDays
+        +int intervalDays
+        +int confianca
+        +int tentativas
+        +int usouDica
+        +String tipoItem
     }
 
     class StatusDaSessao {
@@ -134,6 +163,43 @@ classDiagram
         +String status
     }
 
+    class Conceito {
+        <<progresso/<materia>-conceitos/*.md>>
+        +String id
+        +String nome
+        +int etapa
+        +String status
+        +bool pontoFraco
+        +String notaOrigem
+        +String nota
+        +List~int~ cards
+        +List~Aresta~ conectaCom
+        +List~Aresta~ preparaPara
+    }
+
+    class Aresta {
+        +String id
+        +String porque
+        +String tipo
+    }
+
+    class Grafo {
+        <<scripts/grafo.py>>
+        +carregarConceitos(pasta) List~Conceito~
+        +anexarSRS(conceitos) Retencao
+        +normalizarArestas() List~Aresta~
+        +validar() problemas_e_pendencias
+        +gerarHTML() String
+    }
+
+    class TesteRevisar {
+        <<scripts/test_revisar.py>>
+        +testeRating2NaoCongela()
+        +testeRevisarIdempotente()
+        +testeCriarDeduplica()
+        +testeEspalharPreservaModelo()
+    }
+
     class Setup {
         +int TOTAL_STEPS
         +rodarPassos1a8()
@@ -167,16 +233,31 @@ classDiagram
 
     AgenteOrquestrador --> Ledger : lê e escreve
     AgenteOrquestrador --> Roadmap : extrai conceitos da etapa
-    AgenteOrquestrador --> SRS : agenda e grava
+    AgenteOrquestrador --> Revisar : CLI — nunca SQL na hora
     AgenteOrquestrador --> MCPNotebookLM : opera
+    Revisar --> SRS : ÚNICA escrita · idempotente
+    Revisar ..> Agendamento : calcularFSRS devolve
+    NivelDeRigor ..> Revisar : rating vira --rating
+    TesteRevisar ..> Revisar : trava a fórmula e as garantias
 
     Roadmap "1" *-- "4..8" Etapa
     Ledger "1" --> "1" Roadmap : aponta
     SRS "1" *-- "0..*" Card
+    SRS "1" *-- "0..*" ReviewLog
+    Card "1" --> "0..*" ReviewLog : histórico
     MCPNotebookLM --> Notebook
     Notebook "1" *-- "1..*" Source
     Notebook "1" *-- "0..*" Artefato
     Etapa ..> Artefato : conceitos viram focusPrompt
+
+    Grafo --> Conceito : lê a pasta
+    Grafo --> Revisar : retrievability(FSRS)
+    Grafo ..> Aresta : normaliza no sentido do fluxo
+    Conceito "1" *-- "0..*" Aresta
+    Conceito ..> Card : cards[] fazem o nó desbotar
+    Roadmap ..> Conceito : conecta_com e prepara_para viram arestas
+    NivelDeRigor ..> Conceito : nota entra só se passou no portão
+    AgenteOrquestrador --> Conceito : grava a explicação do ALUNO
 
     Setup --> AuditorMCP : passo 4
     AuditorMCP --> MCPNotebookLM : pina o commit

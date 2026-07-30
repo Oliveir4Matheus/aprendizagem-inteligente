@@ -308,7 +308,7 @@ Regras derivadas, todas em `AGENTS.md`:
 | `METODOS_DE_ENSINO.md` | Os 6 métodos, a escala de rigor, as 5 posturas, calibração, integração, transferência | agente, sob demanda |
 | `COOKBOOK.md` | Runbook: onboarding, setup, atualização do MCP, operação do loop | agente |
 | `GUIA_NOTEBOOKLM.md` | Persona/método — **sobe como fonte no NotebookLM** | agente + NotebookLM |
-| `REVISAO_IA.md` | SQLs + fórmulas FSRS + protocolo de calibração | agente, na Fase 3 |
+| `REVISAO_IA.md` | Protocolo da revisão (cloze, rigor, rating, calibração) — a mecânica do banco fica no `scripts/revisar.py` | agente, na Fase 3 |
 | `ARQUITETURA.md` | Visão geral + 4 diagramas | humano |
 | `README.md` | Quickstart | humano |
 | `.agents/mcp_config.json` | MCP com privilégio mínimo | runtime do agente |
@@ -385,11 +385,96 @@ Todos em Python 3.9+, **só biblioteca padrão**, rodando igual em Windows, Linu
 | Script | O que faz | Quando roda |
 |---|---|---|
 | **`status.py`** | **Passo zero de toda sessão.** Lê ledger + banco e decide por onde começar | início de cada sessão |
+| **`revisar.py`** | **Único ponto de escrita no `srs.db`**: FSRS-5, criação de cards, backlog | durante a revisão e a Fase 3 |
+| **`grafo.py`** | Grafo de conhecimento navegável: conceitos + FSRS → HTML autocontido | Fase 3, a cada conceito dominado |
 | `sessao.py` | Cronômetro em blocos de foco (`iniciar` / `fim` / `agora`) | quando o aluno diz "iniciar" |
 | `setup.py` | Passos 1–8 do setup: uv, clone, auditoria, pin, `estudo/`, privilégio, login | uma vez por máquina |
 | `mcp_update.py` | Checa atualização do MCP e **audita o diff antes de aplicar** | periodicamente |
 | `workspace.py` | Módulo compartilhado: leitura de ledger/perfil/banco, migração, fila intercalada | importado pelos outros |
 | `mnemo.py` | Barra de progresso, arte do tutor, cores e UTF-8 multiplataforma | importado pelos outros |
+
+### Por que `revisar.py` é um script e não um snippet no `REVISAO_IA.md`
+
+Até esta versão, a fórmula do FSRS-5 — os 19 pesos, os três ramos de estado, o cálculo do
+intervalo — vivia como um bloco de Python **dentro do `REVISAO_IA.md`**, para o agente
+retranscrever e executar a cada card revisado. Isso tem três problemas que só aparecem com o
+tempo:
+
+1. **O resultado depende de qual modelo está rodando.** Um snippet copiado é um snippet que
+   pode ser adaptado, encurtado ou "corrigido" na hora. O bug do `W[15]` zerado (§6.3), que
+   congelava para sempre o intervalo de todo card avaliado com rating 2, nasceu exatamente de
+   uma edição bem-intencionada num índice solto.
+2. **Não há idempotência.** Se a sessão cai no meio e o agente reexecuta, o card é recalculado
+   e uma segunda linha entra no `review_log` — o histórico que alimenta o relatório de
+   calibração fica errado, silenciosamente.
+3. **Não dá para testar.** Prosa não roda em CI, nem responde "isto ainda funciona?".
+
+Com a mecânica no script, o `REVISAO_IA.md` fica com o que de fato é julgamento do agente —
+montar o cloze, decidir a lacuna, escolher quando a dica entra, atribuir o rating. A divisão é
+essa: **julgamento é prompt, mecânica é código.**
+
+As travas que o script dá de graça: `revisar` recusa uma segunda gravação do mesmo card no
+mesmo dia; `criar` deduplica por `front`; `espalhar` exige `--confirmar`; `UPDATE` + `INSERT`
+saem numa transação só, com rollback. `python3 scripts/test_revisar.py` cobre a fórmula e as
+travas — inclusive uma regressão específica para o `W[15]`.
+
+### Por que a nota do nó é a explicação do aluno
+
+O grafo de conhecimento (`grafo.py`) tem um nó por conceito, e cada nó abre uma anotação.
+A pergunta de projeto foi **de quem é o texto dessa anotação** — e a resposta muda o que o
+artefato vale.
+
+O caminho fácil seria gerar o resumo a partir da fonte, ou pedir ao NotebookLM. Sai
+preciso, sai com citação, e sai rápido. Mas seria o **único artefato modo-reconhecimento**
+de um sistema inteiro construído sobre produção ativa: o recall é cloze porque múltipla
+escolha é reconhecimento (§2.2 alavanca 1), o portão exige defesa sob contestação, o quiz
+do NotebookLM foi recusado como árbitro. Uma nota copiada contradiz tudo isso — e ainda
+abre a porta para o **vício de coleção**, o modo de falha clássico do Obsidian e do Zettelkasten:
+um acervo bonito que dá a sensação de domínio e substitui a recuperação.
+
+A anotação é, então, **a explicação que o aluno deu no item de portão aprovado**. Três
+propriedades caem de graça:
+
+1. **É geração.** O texto existe porque ele produziu, não porque leu.
+2. **Carrega prova.** O nó só ganha nota depois de o conceito ser sustentado sob contestação,
+   sem dica. Nó com nota é nó que passou.
+3. **É a melhor pista de recuperação disponível.** Reler a própria explicação bem-sucedida
+   reinstala o contexto da recuperação original; reler uma definição de livro não.
+
+E custa **zero trabalho novo** — é captura de algo que já acontece na Fase 3.
+
+**O risco, e a mitigação.** Salvar a explicação sem conferir é pior que não salvar: uma nota
+fluente com o critério errado, gravada como canônica, vira erro ensaiado. O risco não é
+teórico neste projeto — o ledger registra o padrão em letras garrafais (*"acerta a
+lógica/ação central de primeira, mas erra o CRITÉRIO EXATO que decide"*). Por isso o
+NotebookLM entra como **conferente, não como autor**: o agente submete a explicação do aluno
+para verificação ancorada na fonte, com citação, e só grava se casar. Divergência vira
+`pontos_fracos` — não nota.
+
+O campo `nota_origem` mantém isso auditável: `aluno` é o alvo, `ledger` é dívida de migração
+e aparece no nó como "síntese provisória", com aviso explícito no painel. `grafo.py --validar`
+separa **problema** (grafo quebrado) de **pendência** (dívida esperada) exatamente para o
+comando não viver vermelho e ser ignorado.
+
+### Por que o nó desbota
+
+Um grafo de conhecimento **só cresce** — e é aí que ele mente. Nó verde de três semanas atrás
+parece idêntico a nó verde de ontem, então o desenho acumula troféus e some com o
+esquecimento. É a mesma armadilha que este sistema recusa para tempo de estudo (§4.5: minuto
+isolado mede esforço, não retenção); não faria sentido recusá-la ali e aceitá-la aqui.
+
+Como o `srs.db` guarda estabilidade por item, o grafo pinta a **retrievability** do FSRS:
+a opacidade do nó dominado é `0,34 + 0,66 · R`, e nó com card vencido pulsa. O grafo cresce
+**e apaga** — deixa de ser vitrine e passa a ser instrumento de retenção. Um mapa desbotando
+é o gatilho de revisão mais honesto que o sistema tem.
+
+Dois detalhes de honestidade no cálculo:
+
+- A retenção do conceito é a do **card mais fraco**, não a média. Um conceito vale o elo que
+  já cedeu; média esconderia justamente o card que precisa voltar.
+- Card **nunca revisado** não tem curva de esquecimento, então fica fora da conta — e o
+  painel diz quantos ficaram de fora. Sem isso, um conceito com dois cards frescos e dois
+  nunca vistos exibiria "99%" e pareceria seguro.
 
 ### Por que `status.py` é um script e não uma instrução
 

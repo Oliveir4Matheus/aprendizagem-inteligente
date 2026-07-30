@@ -23,7 +23,18 @@ usar uma só**; o que muda é qual serve melhor este aluno, neste conteúdo, nes
 **Funciona quando:** o aluno já tem base para raciocinar, gosta de ser desafiado, e o
 conceito tem uma cadeia lógica que dá para reconstruir.
 
-**Roteiro:**
+**Pré-requisito não-negociável: o método governa como se aprofunda um conceito já
+apresentado — nunca como ele é apresentado pela primeira vez.** Perguntar "qual é o
+nome técnico disso?" sobre um termo que o aluno nunca viu não é Socrático, é
+adivinhação: não existe modelo mental para puxar, e a experiência vira frustração
+("estou estudando, é claro que não sei"), não descoberta guiada. Na primeira vez que
+um termo aparece — mesmo dentro de uma sessão socrática — apresente-o (nome + uma
+frase de definição) **antes** de perguntar qualquer coisa sobre ele. Só depois de
+apresentado o termo vira material de pergunta socrática (aplicação, distinção,
+exemplo). Essa regra vale tanto no loop do agente orquestrador quanto no chat do
+NotebookLM (`GUIA_NOTEBOOKLM.md` §4).
+
+**Roteiro (a partir daqui, o termo já foi apresentado):**
 1. Faça **uma** pergunta aberta que exponha o modelo mental atual do aluno.
 2. Escute a resposta e localize **a premissa exata** que está errada ou faltando.
 3. Faça a próxima pergunta mirando **só naquela premissa** — não corrija, pergunte.

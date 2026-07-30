@@ -122,13 +122,14 @@ aprendizagem-inteligente/
 │   ├── COOKBOOK.md            ← setup, onboarding, atualização do MCP, loop
 │   ├── ARQUITETURA.md         ← mapa das peças + diagramas
 │   ├── GUIA_NOTEBOOKLM.md     ← persona/método (sobe como fonte no NotebookLM)
-│   ├── REVISAO_IA.md          ← SQLs + FSRS da revisão interativa
+│   ├── REVISAO_IA.md          ← protocolo da revisão interativa (cloze, rigor, rating)
 │   ├── .agents/
 │   │   ├── mcp_config.json          ← MCP com privilégio mínimo
 │   │   ├── mcp_pin.json             ← commit auditado do MCP
 │   │   └── skills/professor/SKILL.md ← o cérebro (persona + loop 3 fases)
-│   ├── scripts/               ← status.py · sessao.py · setup.py
-│   │                             mcp_update.py · mnemo.py · workspace.py
+│   ├── scripts/               ← status.py · revisar.py · grafo.py · sessao.py
+│   │                             setup.py · mcp_update.py · mnemo.py · workspace.py
+│   │                             test_revisar.py · test_grafo.py (regressão)
 │   └── templates/             ← modelos copiados para estudo/ no setup
 │
 └── ▼ estudo/ — IGNORADO pelo git, nunca sai da sua máquina

@@ -3,19 +3,29 @@ sequenceDiagram
     actor Aluno
     participant M as MNEMO (agente)
     participant WS as Workspace (estudo/)
+    participant RV as revisar.py
+    participant SRS as srs.db (FSRS)
     participant MCP as MCP notebooklm
     participant NLM as NotebookLM
-    participant SRS as srs.db (FSRS)
 
+    Note over M,SRS: O agente NUNCA escreve no srs.db direto — só via revisar.py
     Aluno->>M: abre o agente no diretório
     M->>WS: PASSO ZERO — scripts/status.py
     WS-->>M: estado + próximo passo (fase2 / reentrada / revisão / loop)
     alt modo reentrada disparado
         Note over M,SRS: 10+ dias ausente ou backlog acima de 15
-        M->>SRS: buscarReentrada(teto=8) ordenado por MAIOR estabilidade
+        M->>RV: pendentes --reentrada (teto=8, MAIOR estabilidade)
+        RV->>SRS: SELECT
+        SRS-->>RV: 8 cards
+        RV-->>M: fila
         M->>Aluno: 8 cards, dica antecipada, zero conteúdo novo
         M->>Aluno: oferece espalhar o backlog restante
         Aluno-->>M: autoriza ou não
+        opt autorizou
+            M->>RV: espalhar --dias 5 --confirmar
+            RV->>SRS: reagenda só due_date
+            Note over RV,SRS: sem --confirmar o comando RECUSA
+        end
     end
     M->>WS: lê PERFIL.md
     alt PERFIL com placeholders
@@ -24,13 +34,14 @@ sequenceDiagram
         M->>WS: grava PERFIL.md
     end
     M->>WS: lê _index.md, ledger e roadmap
-    M->>SRS: buscarVencidos(hoje)
-    SRS-->>M: N cards vencidos
+    M->>RV: pendentes --json (fila intercalada por tópico)
+    RV-->>M: N cards vencidos
 
     alt há revisão vencida
         M->>Aluno: revisão FSRS primeiro (cloze)
         Aluno-->>M: respostas
-        M->>SRS: gravarRevisao(card, rating)
+        M->>RV: revisar --card-id --rating ...
+        RV->>SRS: UPDATE cards + INSERT review_log (1 transação)
     end
 
     Note over M,WS: FASE 1 — PREP
@@ -67,8 +78,22 @@ sequenceDiagram
             Note right of M: rating limitado a 2
         end
         M->>M: avalia -> rating 1..4
+        M->>RV: revisar --rating --confianca --tentativas --usou-dica --tipo-item
+        RV->>SRS: calcula FSRS-5 e grava
+        RV-->>M: próxima revisão em AAAA-MM-DD (N dias)
+        Note over RV,SRS: repetir o mesmo card hoje não altera nada
     end
-    M->>SRS: gravarRevisao + criarCard(erros)
+    M->>RV: criar (cards dos erros — dedupe por front)
+    alt conceito passou no portão
+        M->>NLM: confere a explicação do ALUNO na fonte (com citação)
+        NLM-->>M: casa / divergiu
+        alt casou
+            M->>WS: grava <materia>-conceitos/<id>.md (nota_origem: aluno)
+        else divergiu
+            Note over M,WS: NÃO grava nota — divergência vira pontos_fracos
+        end
+        M->>WS: grafo.py — regera <materia>-grafo.html
+    end
     M->>WS: ledger (status, retomar_em, pontos_fracos)
     M->>WS: ultima_sessao = hoje · LIMPA fase2_iniciada_em
     M->>WS: roadmap (etapa_atual) e _index.md

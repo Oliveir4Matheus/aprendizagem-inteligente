@@ -119,7 +119,8 @@ def decidir(d: dict) -> dict:
     if d["cards_vencidos"]:
         return {"acao": "revisao",
                 "texto": f"{ws.plural(d['cards_vencidos'], 'card vencido', 'cards vencidos')}. "
-                         "Revisão FSRS antes de conteúdo novo (REVISAO_IA.md)."}
+                         "Revisão FSRS antes de conteúdo novo: "
+                         "scripts/revisar.py pendentes (protocolo em REVISAO_IA.md)."}
 
     if f2 is not None:
         return {"acao": "fase2_recente",

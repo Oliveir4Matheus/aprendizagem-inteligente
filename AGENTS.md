@@ -18,7 +18,7 @@ Seu nome nesta sessão é o do tutor configurado em `estudo/PERFIL.md` → "Tuto
    - **Se SIM** → siga em frente.
 3. **Carregue a persona/método:** leia [`.agents/skills/professor/SKILL.md`](.agents/skills/professor/SKILL.md) (o cérebro) e, se precisar do roteiro detalhado do método configurado, [`METODOS_DE_ENSINO.md`](METODOS_DE_ENSINO.md).
 4. **Qual matéria hoje?** Leia [`estudo/progresso/_index.md`](estudo/progresso/_index.md).
-   - Matéria **já existente** → abra `estudo/progresso/<materia>.md` e retome de `retomar_em` + `pontos_fracos`. Se `proxima_revisao` venceu, comece pela revisão (FSRS via `REVISAO_IA.md`).
+   - Matéria **já existente** → abra `estudo/progresso/<materia>.md` e retome de `retomar_em` + `pontos_fracos`. Se `proxima_revisao` venceu, comece pela revisão (protocolo em `REVISAO_IA.md`, escrita via `scripts/revisar.py`).
    - Matéria **nova** → siga `COOKBOOK.md` Parte B: **proponha o roadmap e espere o OK do aluno** antes de gravar.
 5. **Rode o loop de 3 fases** (PREP → STUDY → PROGRESS) descrito na skill.
 
@@ -66,6 +66,8 @@ Se o aluno disser algo do tipo *"da próxima vez faça X"*, *"não gere Y"*, *"p
 - **Tempo nunca é reportado sozinho.** `study_sessions` só é lida cruzada com o `review_log` (`status.py --performance`). Minuto isolado mede esforço, não retenção.
 - **Fase 3 = recall com o mínimo de perguntas definido no `PERFIL.md`** (padrão 7), em **produção ativa** (cloze progressivo), mesmo que o aluno já tenha feito o quiz no NotebookLM.
 - **`estudo/progresso/srs.db` (FSRS) é a fonte da verdade do progresso** — o mastery do NotebookLM é secundário.
+- **A anotação do nó do grafo é a explicação do ALUNO, conferida na fonte.** Nunca escreva sua própria síntese na seção "O que é" de um conceito: capture o que o aluno disse no item de portão aprovado, confira contra a fonte (NotebookLM, com citação) e só então grave. Divergência vira `pontos_fracos` no ledger — não nota. Um resumo que o aluno não produziu não tem o valor de recuperação de um que ele produziu, e é por isso que o campo `nota_origem` existe.
+- **Nunca escreva no `srs.db` fora do `scripts/revisar.py`.** Nada de SQL ou Python digitado na hora para gravar revisão, criar card ou mexer em `due_date` — a fórmula do FSRS e as travas de idempotência estão no script justamente para o resultado não depender de qual agente está rodando. Consulta de leitura, à vontade. Se um comando falhar, reporte o erro; não improvise um contorno.
 - **Nunca avance para conceitos de etapas futuras do roadmap.** O `focus_prompt` de todo artefato leva a lista de conceitos obrigatórios da etapa atual.
 - **Least privilege:** não reative grupos de MCP desabilitados em `.agents/mcp_config.json` (sharing/automation ficam OFF de propósito).
 - **Atualização do MCP:** só suba o pin depois de rodar `python3 scripts/mcp_update.py` e o aluno aprovar a auditoria. Nunca atualize silenciosamente.
@@ -84,9 +86,14 @@ Se o aluno disser algo do tipo *"da próxima vez faça X"*, *"não gere Y"*, *"p
 | `COOKBOOK.md` | Runbook: onboarding, setup, atualização do MCP, operação |
 | `ARQUITETURA.md` | Visão geral + diagramas de classes, sequência e atividade |
 | `GUIA_NOTEBOOKLM.md` | Persona/método para subir como fonte no NotebookLM |
-| `REVISAO_IA.md` | SQLs + fórmulas FSRS prontos para a revisão interativa |
+| `REVISAO_IA.md` | Protocolo da revisão interativa (cloze, rigor, rating, calibração) |
 | `.agents/mcp_config.json` | Config do MCP `notebooklm` (privilégio mínimo) |
 | `scripts/status.py` | **Passo zero da sessão** — estado + por onde começar |
+| `scripts/revisar.py` | **Único ponto de escrita no `srs.db`** — FSRS, cards, backlog |
+| `scripts/grafo.py` | Grafo de conhecimento navegável (conceitos + FSRS → HTML) |
+| `scripts/test_revisar.py` | Regressão da fórmula FSRS e das travas de idempotência |
+| `scripts/test_grafo.py` | Regressão do parser de conceitos e do HTML do grafo |
+| `templates/conceito.md` | Modelo de um nó do grafo (um arquivo por conceito) |
 | `scripts/sessao.py` | Cronômetro em blocos de foco (`iniciar` / `fim`) |
 | `scripts/setup.py` | Setup multiplataforma com barra de progresso |
 | `scripts/mcp_update.py` | Checagem de atualização + auditoria de segurança do MCP |
@@ -106,6 +113,8 @@ Se o aluno disser algo do tipo *"da próxima vez faça X"*, *"não gere Y"*, *"p
 | `estudo/progresso/<materia>.md` | Ledger da matéria (estado, 80/20, pontos fracos, log) |
 | `estudo/progresso/<materia>-roadmap.md` | Trilha da matéria (etapas + conceitos obrigatórios) |
 | `estudo/progresso/<materia>-mapa.md` | Mapa conceitual (Mermaid): onde cada conceito se encaixa e em que etapa futura reaparece |
+| `estudo/progresso/<materia>-conceitos/` | **Um arquivo por conceito** = os nós do grafo (anotação + arestas + cards) |
+| `estudo/progresso/<materia>-grafo.html` | Grafo navegável gerado por `scripts/grafo.py` (não editar à mão) |
 | `estudo/progresso/srs.db` | Flashcards + FSRS (repetição espaçada) |
 | `estudo/progresso/jornada_do_heroi.jpg` | Badge de conquista para o LinkedIn |
 | `estudo/JORNADA.md` | Mapa visual da jornada na matéria |

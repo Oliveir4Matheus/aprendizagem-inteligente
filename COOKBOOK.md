@@ -186,8 +186,8 @@ Lê o ledger e o `srs.db` e imprime o estado + **por onde a sessão começa**. R
 
 ```
      ___
-   (o,o)   MNEMO · Lean Six Sigma
-   /)_)    etapa 2/6 · Fase de Definição
+   (o,o)   MNEMO · <Matéria>
+   /)_)    etapa 2/6 · <Nome da Etapa>
      " "
 
   Cards vencidos      6             o mais antigo há 1 dia  ·  6 no total
@@ -226,7 +226,7 @@ Estude no NotebookLM: áudio no deslocamento, responda o quiz, tire dúvidas com
 python3 scripts/sessao.py iniciar
 python3 scripts/sessao.py iniciar --bloco 50 --pausa 10 --blocos 3   # ritmo diferente hoje
 python3 scripts/sessao.py agora                                      # o que está aberto
-python3 scripts/sessao.py fim --absorvido "SIPOC ficou; VOC ainda confuso"
+python3 scripts/sessao.py fim --absorvido "<conceito A> ficou; <conceito B> ainda confuso"
 ```
 
 Ele imprime o horário de cada bloco e pausa e sai do caminho — não há contagem regressiva ocupando o terminal. Os padrões vêm do `PERFIL.md` → "Ritmo da sessão".
@@ -252,7 +252,7 @@ Ele imprime o horário de cada bloco e pausa e sai do caminho — não há conta
 
    **Antes de revelar cada resposta, pergunte a confiança** (`vou acertar` / `mais ou menos` / `não vou acertar`) e registre. Ao fim, devolva o desencontro em uma linha.
 2. Atualize o **ledger** (`Edit`): `topicos[].status`, `passo_loop`, `retomar_em`; **todo erro vira `pontos_fracos`**.
-3. Atualize o **FSRS** em `estudo/progresso/srs.db` (`REVISAO_IA.md`): rating 1–4, novo intervalo, `cards` + `review_log`; crie cards dos erros (sem duplicar pelo `front`).
+3. Atualize o **FSRS** com `python3 scripts/revisar.py revisar --card-id <id> --rating <1-4> --confianca <0-2> --tentativas <n> --usou-dica <0|1> --tipo-item <tipo>` (o script calcula o intervalo e grava `cards` + `review_log`); crie cards dos erros com `revisar.py criar`. **Nunca por SQL na mão** — ver `REVISAO_IA.md`.
 4. Atualize o **roadmap** (`etapa_atual`, status da etapa) e o `_index.md`. A etapa só vira `dominada` se passar no **portão N4** — 2 itens de cenário aberto, sem dica.
 5. Linha nova no `## Log de aprendizado`, atualize `atualizado:` e `ultima_sessao:`, e **limpe `fase2_iniciada_em:`** — a Fase 2 se fechou.
 6. Etapa dominada → **prévia estruturante** do que vem (2-3 frases, via `prepara_para`), gere o **badge** `estudo/progresso/jornada_do_heroi.jpg` e atualize `estudo/JORNADA.md`.
@@ -264,6 +264,29 @@ python3 scripts/status.py --calibracao    # o aluno sabe o que não sabe?
 python3 scripts/status.py --fila          # fila de hoje, intercalada por tópico
 python3 scripts/status.py --performance   # tempo cruzado com retenção
 ```
+
+**Escrita no `srs.db` — sempre por `scripts/revisar.py`:**
+
+```bash
+python3 scripts/revisar.py pendentes --json           # fila de hoje (com back, para o agente)
+python3 scripts/revisar.py pendentes --reentrada      # teto de 8, maior estabilidade primeiro
+python3 scripts/revisar.py revisar --card-id 12 --rating 3 --confianca 2 \
+    --tentativas 1 --usou-dica 0 --tipo-item recall
+python3 scripts/revisar.py criar --front "..." --back "..." --deck "..." --subject "..."
+python3 scripts/revisar.py espalhar --dias 5 --confirmar
+```
+
+Os comandos são idempotentes: revisar o mesmo card duas vezes no mesmo dia não duplica nem recalcula, e `criar` deduplica por `front`.
+
+**Grafo de conhecimento** (nós = conceitos, arestas = dependências e pontes):
+
+```bash
+python3 scripts/grafo.py              # regera estudo/progresso/<materia>-grafo.html
+python3 scripts/grafo.py --validar    # problemas (conserte) x pendências (dívida)
+python3 scripts/grafo.py --materia <slug>   # outra matéria que não a ativa
+```
+
+Cada nó é um arquivo em `estudo/progresso/<materia>-conceitos/` (modelo: `templates/conceito.md`). A anotação do nó é **a explicação do aluno no portão, conferida na fonte** — ver `SKILL.md` Fase 3 passo 5c. O nó **desbota** conforme a retenção do FSRS cai e **pulsa** quando há card vencido, então o grafo cresce e apaga em vez de só acumular verde.
 
 ### C5. Modo reentrada — quando o aluno volta depois de sumir
 
@@ -279,7 +302,7 @@ Disparado automaticamente pelo `status.py` com **10+ dias sem sessão** ou **bac
 
 A régua não muda de propósito: baixar o rigor inflaria o rating, que infla o intervalo, que esconde a lacuna. Adiantar a dica acolhe sem mentir para o agendamento — dica já limita o rating a 2.
 
-Ao fim, **ofereça** espalhar o backlog restante pelos próximos dias. Só execute com um "pode" explícito (`REVISAO_IA.md` §1c) — `due_date` é a fonte da verdade do progresso.
+Ao fim, **ofereça** espalhar o backlog restante pelos próximos dias: `python3 scripts/revisar.py espalhar --dias 5 --confirmar`. O `--confirmar` é obrigatório justamente porque `due_date` é a fonte da verdade do progresso — sem ele o comando recusa (`REVISAO_IA.md` §1c).
 
 ---
 

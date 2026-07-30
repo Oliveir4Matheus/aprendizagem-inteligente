@@ -1,14 +1,14 @@
 flowchart TD
     ST[/PASSO ZERO<br/>python3 scripts/status.py/] --> D0{Qual o próximo passo<br/>que o script apontou?}
 
-    D0 -- reentrada --> RE[MODO REENTRADA<br/>teto de 8 cards · maior estabilidade primeiro<br/>dica antecipada · zero conteúdo novo]
+    D0 -- reentrada --> RE[MODO REENTRADA<br/>revisar.py pendentes --reentrada<br/>teto de 8 · maior estabilidade primeiro<br/>dica antecipada · zero conteúdo novo]
     RE --> RE2{Espalhar o backlog<br/>restante?}
-    RE2 -- só com autorização --> RE3[/Reagenda due_date<br/>e registra no log/]
+    RE2 -- só com autorização --> RE3[/revisar.py espalhar --dias 5 --confirmar<br/>mexe só em due_date/]
     RE2 -- não --> End
     RE3 --> End
 
     D0 -- fase2 pendente --> W
-    D0 -- revisão vencida --> R2[Revisão espaçada primeiro<br/>fila intercalada por tópico]
+    D0 -- revisão vencida --> R2[Revisão espaçada primeiro<br/>revisar.py pendentes<br/>fila intercalada por tópico]
     D0 -- sem matéria --> N1
     D0 -- seguir o loop --> R1
     R2 --> R1
@@ -44,11 +44,14 @@ flowchart TD
     G1 --> G2{Pediu dica?}
     G2 -- sim --> G3[Devolve contexto<br/>rating limitado a 2]
     G2 -- não --> G4
-    G3 --> G4[Avalia: rating 1-4<br/>grava confiança · tentativas · dica]
-    G4 --> G5{Cobriu as cotas?}
+    G3 --> G4[Avalia: rating 1-4]
+    G4 --> G4b[/revisar.py revisar --rating --confianca<br/>--tentativas --usou-dica --tipo-item<br/>idempotente: 2ª vez no dia não altera nada/]
+    G4b --> G5{Cobriu as cotas?}
     G5 -- não --> G0
     G5 -- sim --> G5b[/Devolve o desencontro:<br/>previu 6, acertou 4/]
-    G5b --> G6[/Grava FSRS · ledger · roadmap · log<br/>ultima_sessao · LIMPA fase2_iniciada_em/]
+    G5b --> G5c[/Confere a explicação do ALUNO na fonte<br/>casou: grava o nó do conceito<br/>divergiu: vira ponto_fraco, sem nota/]
+    G5c --> G5d[/grafo.py — nó novo no grafo<br/>desbota conforme o FSRS decai/]
+    G5d --> G6[/revisar.py criar cards dos erros<br/>+ ledger · roadmap · log<br/>ultima_sessao · LIMPA fase2_iniciada_em/]
 
     G6 --> G7{Passou no PORTÃO?<br/>2 itens N4 sem dica}
     G7 -- não --> G8[Etapa segue em_andamento<br/>falhas viram pontos_fracos]
@@ -63,4 +66,4 @@ flowchart TD
     class D0,N3,W,T1,G2,G5,G7,RE2 decisao
     class R1,F2,F3 fase
     class RE,V2 alerta
-    class G0,G5b,C1 meta
+    class G0,G5b,C1,G4b,G5c,G5d meta

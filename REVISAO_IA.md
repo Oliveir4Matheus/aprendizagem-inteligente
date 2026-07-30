@@ -1,6 +1,18 @@
 # Instrução para IA — Sistema de Revisão Interativa com FSRS v5
 
-Este arquivo é auto-suficiente. Qualquer modelo de IA (Claude, GPT, Gemini, etc.) pode lê-lo e conduzir uma sessão de revisão interativa usando o banco SQLite deste projeto.
+Este arquivo é auto-suficiente. Qualquer modelo de IA (Claude, GPT, Gemini, etc.) pode lê-lo e conduzir uma sessão de revisão interativa neste projeto.
+
+> **Você não escreve no banco digitando SQL.** Toda leitura e toda escrita em
+> `estudo/progresso/srs.db` passa por **`scripts/revisar.py`**. A fórmula do FSRS-5, os
+> 19 pesos, o dedupe e as travas de idempotência vivem lá — testados uma vez, chamados
+> por linha de comando. Isso existe para que o resultado seja o mesmo **independente de
+> qual agente ou modelo** conduzir a sessão: um snippet retranscrito na hora é um snippet
+> que uma hora sai errado (ver `docs/MANUAL.md` §6.3 — o bug do `W[15]` zerado, que
+> congelava para sempre todo card avaliado com rating 2, nasceu exatamente assim).
+>
+> **O que continua sendo seu:** conduzir o cloze, escolher a lacuna, decidir quando a
+> dica entra, julgar a resposta e atribuir o rating. Isso é julgamento — não dá para
+> virar script. O resto é mecânica, e mecânica é código.
 
 ---
 
@@ -8,11 +20,11 @@ Este arquivo é auto-suficiente. Qualquer modelo de IA (Claude, GPT, Gemini, etc
 
 O aluno (perfil completo em `estudo/PERFIL.md`) usa este sistema de revisão assim:
 
-1. A IA busca os flashcards vencidos no banco SQLite
+1. A IA busca os flashcards vencidos (`revisar.py pendentes`)
 2. Pergunta um card por vez — em **cloze progressivo**, no tamanho de lacuna do nível de rigor
 3. O aluno completa a lacuna com suas próprias palavras
 4. A IA avalia a resposta e atribui um rating 1-4
-5. A IA computa o próximo intervalo com FSRS v5 e salva no banco
+5. A IA grava a revisão (`revisar.py revisar`) — o script calcula o FSRS e o próximo intervalo
 6. Repete até acabar os cards devidos
 
 **Estilo:** direto, técnico, sem enrolação. Valide respostas com precisão — o objetivo é retenção real, não aprovação fácil.
@@ -21,9 +33,40 @@ O aluno (perfil completo em `estudo/PERFIL.md`) usa este sistema de revisão ass
 
 ---
 
+## Os comandos
+
+```bash
+python3 scripts/revisar.py pendentes                 # fila de hoje, intercalada por tópico
+python3 scripts/revisar.py pendentes --reentrada     # teto de 8, maior estabilidade primeiro
+python3 scripts/revisar.py pendentes --json          # mesma fila, com front/back, para você ler
+
+python3 scripts/revisar.py revisar --card-id 12 --rating 3 \
+    --confianca 2 --tentativas 1 --usou-dica 0 --tipo-item recall
+
+python3 scripts/revisar.py criar --front "..." --back "..." \
+    --deck "Estudos::<Materia>::<Topico>" --subject "<Matéria>" --tags "<materia>,<topico>"
+python3 scripts/revisar.py criar --json novos.json   # lote
+
+python3 scripts/revisar.py espalhar --dias 5 --confirmar
+```
+
+**Garantias que o script dá e que você não precisa reimplementar:**
+
+| Garantia | Como |
+|---|---|
+| Revisar o mesmo card 2× no mesmo dia não duplica nada | `revisar` checa o `review_log` do dia e sai avisando, sem alterar o card |
+| Criar o mesmo card 2× não duplica | `criar` deduplica por `front` e reporta quantos pulou |
+| Espalhar backlog nunca acontece por acidente | `espalhar` sem `--confirmar` recusa e explica |
+| O banco existe e está migrado | `abrir_db()` aplica o esquema e as colunas novas sozinho |
+| Escrita parcial não corrompe | `UPDATE cards` + `INSERT review_log` num commit só, com rollback |
+
+Nenhum comando pede caminho de banco: todos usam `estudo/progresso/srs.db`.
+
+---
+
 ## Banco de dados
 
-**Arquivo:** `estudo/progresso/srs.db` (SQLite, relativo à raiz do projeto)
+**Arquivo:** `estudo/progresso/srs.db` (SQLite). Esquema completo em `templates/srs_schema.sql`.
 
 **Tabela `cards`:**
 
@@ -43,22 +86,9 @@ O aluno (perfil completo em `estudo/PERFIL.md`) usa este sistema de revisão ass
 | reps        | INTEGER | total de revisões                                     |
 | lapses      | INTEGER | total de erros (rating=1)                             |
 
-**Tabela `review_log`:** histórico de cada revisão (card_id, date, rating, elapsed_days, interval_days, stability, difficulty, state)
+**Tabela `review_log`:** o resultado **e o contexto** de cada revisão — `card_id`, `review_date`, `rating`, `elapsed_days`, `interval_days`, `stability`, `difficulty`, `state`, mais `confianca`, `tentativas`, `usou_dica` e `tipo_item` (§6).
 
----
-
-## Como usar Python para acessar o banco
-
-A IA deve usar Python inline via Bash (ou equivalente no seu ambiente):
-
-```python
-import sqlite3, json
-from datetime import date, datetime, timedelta
-
-DB = './estudo/progresso/srs.db'
-conn = sqlite3.connect(DB)
-conn.row_factory = sqlite3.Row
-```
+Leitura só de consulta (estatística, auditoria) pode ser feita direto com `sqlite3`, à vontade. **Escrita, nunca** — use os comandos.
 
 ---
 
@@ -66,39 +96,28 @@ conn.row_factory = sqlite3.Row
 
 ### 1. Buscar cards devidos
 
-```python
-today = str(date.today())
-rows = conn.execute(
-    "SELECT * FROM cards WHERE due_date <= ? ORDER BY state DESC, due_date ASC LIMIT 20",
-    (today,)
-).fetchall()
-cards = [dict(r) for r in rows]
-print(f"{len(cards)} cards para revisar hoje")
+```bash
+python3 scripts/revisar.py pendentes --json
 ```
 
-Se `len(cards) == 0`: dizer ao aluno que não há revisões pendentes e sugerir estudar conteúdo novo.
+Devolve a lista com `id`, `front`, `back`, `deck`, `state`, `difficulty`, `stability` — já **intercalada por tópico** (§"Fila intercalada"). Lista vazia: diga ao aluno que não há revisões pendentes e sugira conteúdo novo.
 
 #### 1b. Modo reentrada — quando o aluno volta depois de sumir
 
-`python3 scripts/status.py` dispara este modo sozinho quando faz **10+ dias** sem sessão **ou** o backlog passa de **15 cards**. Não ignore o aviso.
+`python3 scripts/status.py` dispara este modo sozinho quando faz **10+ dias** sem sessão **ou** o backlog passa de **15 cards**. Não ignore o aviso — nesse caso a fila vem de:
+
+```bash
+python3 scripts/revisar.py pendentes --reentrada --json
+```
 
 A sessão de volta é a mais frágil de todas: quem some três semanas volta e erra muito, porque três semanas sem revisar é exatamente o desenho do esquecimento. Se a primeira sessão de retorno for uma demonstração de fracasso, não há segunda. **O objetivo dela é reacender o hábito, não quitar a dívida.**
-
-```python
-TETO = 8
-rows = conn.execute(
-    "SELECT * FROM cards WHERE due_date <= ? "
-    "ORDER BY stability DESC, due_date ASC LIMIT ?",   # MAIOR estabilidade primeiro
-    (today, TETO)
-).fetchall()
-```
 
 O que muda:
 
 | | Sessão normal | Modo reentrada |
 |---|---|---|
-| Quantidade | até 20 cards | **teto de 8** |
-| Ordem | mais vencido primeiro | **maior estabilidade primeiro** — os que ele ainda acerta |
+| Quantidade | até 20 cards | **teto de 8** (`--reentrada`) |
+| Ordem | intercalada por tópico | **maior estabilidade primeiro** — os que ele ainda acerta |
 | Conteúdo novo | permitido depois da revisão | **nenhum** |
 | Dica | conforme o nível de rigor | **1 tentativa antes do normal** |
 | Régua do rating | conforme o nível | **inalterada** |
@@ -111,26 +130,18 @@ Abra dizendo o que está acontecendo. Algo como: *"você sumiu 23 dias e tem 41 
 
 Ao fim de uma sessão de reentrada, **ofereça** redistribuir o que sobrou pelos próximos dias. Nunca faça sozinho: `due_date` é a fonte da verdade do progresso, e reescrevê-la sem o aluno mandar contradiz o princípio central do sistema.
 
-```python
-# Só rode depois de um "pode espalhar" explícito.
-# Mexe apenas em due_date — stability e difficulty ficam intactas,
-# então o modelo FSRS não é corrompido, só a fila é reordenada no tempo.
-DIAS = 5
-restantes = conn.execute(
-    "SELECT id FROM cards WHERE due_date <= ? ORDER BY stability DESC", (today,)
-).fetchall()
-for i, r in enumerate(restantes):
-    nova = date.today() + timedelta(days=i % DIAS)
-    conn.execute("UPDATE cards SET due_date=? WHERE id=?", (str(nova), r["id"]))
-conn.commit()
-print(f"{len(restantes)} cards espalhados pelos próximos {DIAS} dias")
+```bash
+# Só rode depois de um "pode espalhar" explícito. Sem --confirmar o comando recusa.
+python3 scripts/revisar.py espalhar --dias 5 --confirmar
 ```
+
+Mexe apenas em `due_date` — `stability` e `difficulty` ficam intactas, então o modelo FSRS não é corrompido, só a fila é reordenada no tempo.
 
 Registre no `## Log de aprendizado` do ledger que houve redistribuição, com a data e a quantidade.
 
 ### 2. Para cada card — apresentar em cloze
 
-Mostrar apenas `card["front"]`, reescrito como **texto lacunado** no tamanho do nível de rigor. NÃO mostrar `card["back"]` antes da resposta.
+Mostrar apenas o `front`, reescrito como **texto lacunado** no tamanho do nível de rigor. NÃO mostrar o `back` antes da resposta.
 
 ```
 N1  uma palavra lacunada num parágrafo inteiro
@@ -146,7 +157,7 @@ Antes de eu te dizer: você acha que acertou essa?
   (a) vou acertar   (b) mais ou menos   (c) não vou acertar
 ```
 
-Guarde em `confianca` como **2 / 1 / 0**. Este passo não é formalidade: é a única parte do protocolo que treina o aluno a **julgar o próprio conhecimento** — a competência que ele vai precisar exercer sozinho quando não houver tutor. Sem previsão registrada não há como medir calibração depois.
+Guarde para passar em `--confianca` como **2 / 1 / 0**. Este passo não é formalidade: é a única parte do protocolo que treina o aluno a **julgar o próprio conhecimento** — a competência que ele vai precisar exercer sozinho quando não houver tutor. Sem previsão registrada não há como medir calibração depois.
 
 ### 3. Aguardar resposta do aluno
 
@@ -156,7 +167,7 @@ O aluno completa a lacuna com as próprias palavras.
 
 ### 4. Avaliar e atribuir rating
 
-Compare a resposta do aluno com `card["back"]` usando julgamento de IA:
+Compare a resposta do aluno com o `back` usando julgamento de IA:
 
 | rating | quando usar                                                     |
 |--------|-----------------------------------------------------------------|
@@ -176,91 +187,34 @@ Compare a resposta do aluno com `card["back"]` usando julgamento de IA:
 
 > **Regra fixa em qualquer nível: acerto após dica vale no máximo rating 2.** Lembrou com apoio não é lembrar sozinho — e o espaçamento precisa refletir isso para não inflar o intervalo.
 
-### 5. Calcular novo intervalo com FSRS v5
+### 5. Gravar a revisão
 
-Execute este snippet Python substituindo os valores de `state, d, s, elapsed, rating`:
+Um comando. Ele calcula o FSRS-5, atualiza `cards` e insere em `review_log` na mesma transação, e imprime a próxima data.
 
-```python
-import math
-
-# Pesos padrão do FSRS-5 (19 parâmetros).
-# ⚠️ NÃO edite índices soltos aqui. W[15] é a penalidade de "Hard" e multiplica o
-#    GANHO de estabilidade quando rating=2 — se virar 0, todo card avaliado com 2
-#    congela no mesmo intervalo para sempre (bug real que já existiu neste arquivo).
-W = [0.40255, 1.18385, 3.173,   15.69105, 7.1949,  0.5345,  1.4604,
-     0.0046,  1.54575, 0.1192,  1.01925,  1.9395,  0.11,    0.29605,
-     2.2698,  0.2315,  2.9898,  0.51655,  0.6621]
-DECAY=-0.5; FACTOR=0.9**(1/DECAY)-1
-REQUESTED_RETENTION = 0.95 # Define a retenção desejada (0.95 encurta os intervalos em ~54% para revisões mais frequentes)
-
-# ── substituir ──────────────────────────────────────────────────────────────
-state   = card["state"]       # 0=New 1=Learning 2=Review 3=Relearning
-d       = card["difficulty"]  # 0 se New
-s       = card["stability"]   # 0 se New
-last    = card["last_review"] # None se nunca revisado
-today_s = str(date.today())
-elapsed = (date.today() - date.fromisoformat(last)).days if last else 0
-rating  = RATING              # 1/2/3/4 conforme avaliação acima
-# ────────────────────────────────────────────────────────────────────────────
-
-r = (1 + FACTOR * elapsed / s)**DECAY if s > 0 else 0.0
-
-if state in (0, 1, 3):  # New / Learning / Relearning
-    nd = min(10, max(1, W[4] - math.exp(W[5]*(rating-1)) + 1)) if state == 0 \
-         else min(10, max(1, (d - W[6]*(rating-3)) + W[7]*(W[4]-(d-W[6]*(rating-3)))))
-    ns = W[rating-1] if state == 0 else max(0.1, s)
-    if rating == 1:
-        new_state, interval = 1, 1
-    else:
-        new_state = 2
-        interval = max(1, round(ns * (REQUESTED_RETENTION**(1/DECAY) - 1) / FACTOR))
-else:  # Review
-    nd = min(10, max(1, (d - W[6]*(rating-3)) + W[7]*(W[4]-(d-W[6]*(rating-3)))))
-    if rating == 1:
-        ns = max(0.1, W[11]*d**(-W[12])*((s+1)**W[13]-1)*math.exp(W[14]*(1-r)))
-        new_state, interval = 3, 1
-    else:
-        hp = W[15] if rating==2 else 1.0
-        eb = W[16] if rating==4 else 1.0
-        ns = max(0.1, s*(math.exp(W[8])*(11-d)*s**(-W[9])*(math.exp(W[10]*(1-r))-1)*hp*eb+1))
-        new_state = 2
-        interval = max(1, round(ns * (REQUESTED_RETENTION**(1/DECAY) - 1) / FACTOR))
-
-next_due = str(date.today() + timedelta(days=interval))
+```bash
+python3 scripts/revisar.py revisar --card-id 12 --rating 3 \
+    --confianca 2 --tentativas 1 --usou-dica 0 --tipo-item recall
 ```
 
-### 6. Gravar no banco
+| flag | valor |
+|---|---|
+| `--card-id` | o `id` que veio de `pendentes` |
+| `--rating` | 1 · 2 · 3 · 4 conforme §4 |
+| `--confianca` | 2 = vou acertar · 1 = mais ou menos · 0 = não vou acertar (§2b) |
+| `--tentativas` | quantas vezes o aluno tentou antes de fechar |
+| `--usou-dica` | 0 ou 1 — dica limita a nota a 2 |
+| `--tipo-item` | `recall` · `intercalado` · `sintese` · `transferencia` · `portao` |
 
-```python
-lapses = card["lapses"] + (1 if rating == 1 else 0)
-today_s = str(date.today())
+Se você rodar o mesmo card duas vezes no mesmo dia, o script avisa e **não altera nada** — não recalcula o FSRS nem duplica a linha do log. Pode chamar sem medo depois de uma interrupção de sessão.
 
-conn.execute(
-    "UPDATE cards SET state=?,difficulty=?,stability=?,due_date=?,"
-    "last_review=?,reps=reps+1,lapses=? WHERE id=?",
-    (new_state, nd, ns, next_due, today_s, lapses, card["id"])
-)
-conn.execute(
-    "INSERT INTO review_log(card_id,review_date,rating,elapsed_days,interval_days,"
-    "stability,difficulty,state,confianca,tentativas,usou_dica,tipo_item) "
-    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-    (card["id"], today_s, rating, elapsed, interval, ns, nd, new_state,
-     CONFIANCA,      # 2 = vou acertar · 1 = mais ou menos · 0 = não vou acertar
-     TENTATIVAS,     # quantas vezes tentou antes de fechar
-     USOU_DICA,      # 0 | 1
-     TIPO_ITEM)      # recall | intercalado | sintese | transferencia | portao
-)
-conn.commit()
-```
+> **As quatro últimas flags não são opcionais.** `confianca` alimenta o relatório de calibração. `tentativas` e `usou_dica` são **fatos objetivos ao lado de um julgamento subjetivo**: se a proporção de notas 3 e 4 subir ao longo do tempo sem que o uso de dica caia, a avaliação afrouxou — e essa é a única forma de perceber. `tipo_item` mede se as cotas de intercalação e transferência estão sendo cumpridas de verdade.
 
-> **As quatro últimas colunas não são opcionais.** `confianca` alimenta o relatório de calibração. `tentativas` e `usou_dica` são **fatos objetivos ao lado de um julgamento subjetivo**: se a proporção de notas 3 e 4 subir ao longo do tempo sem que o uso de dica caia, a avaliação afrouxou — e essa é a única forma de perceber. `tipo_item` mede se as cotas de intercalação e transferência estão sendo cumpridas de verdade.
-
-### 7. Feedback ao aluno
+### 6. Feedback ao aluno
 
 Após cada card, mostrar:
 - Se acertou: breve confirmação + o que foi bem
 - Se errou/parcial: correção precisa + o que estava faltando
-- Próxima revisão: `f"Próxima revisão deste card: {next_due} ({interval} dias)"`
+- Próxima revisão: a data e o intervalo que o comando imprimiu
 
 Ao final da sessão: resumo com total de cards revisados, % de acerto, e os pontos fracos que surgiram.
 
@@ -268,38 +222,29 @@ Ao final da sessão: resumo com total de cards revisados, % de acerto, e os pont
 
 ## Adicionar cards novos ao banco
 
-Durante o ensino de conteúdo novo, a IA pode salvar cards diretamente:
+Durante o ensino de conteúdo novo, a IA salva cards com:
 
-```python
-import sqlite3, json
-from datetime import date, datetime
-
-conn = sqlite3.connect('./estudo/progresso/srs.db')
-cards_novos = [
-    {
-        "front": "Pergunta aqui",
-        "back":  "Resposta aqui",
-        "tags":  ["<materia>","<topico>"],
-        "deck":  "Estudos::<Materia>::<Topico>",
-        "subject": "<Matéria>"
-    },
-    # ... mais cards
-]
-today = str(date.today())
-now   = str(datetime.now())
-added = 0
-for c in cards_novos:
-    exists = conn.execute("SELECT id FROM cards WHERE front=?", (c["front"],)).fetchone()
-    if exists:
-        continue
-    conn.execute(
-        "INSERT INTO cards(front,back,tags,deck,subject,due_date,created_at) VALUES(?,?,?,?,?,?,?)",
-        (c["front"], c["back"], json.dumps(c["tags"]), c["deck"], c["subject"], today, now)
-    )
-    added += 1
-conn.commit()
-print(f"{added} cards adicionados ao SRS")
+```bash
+python3 scripts/revisar.py criar \
+    --front "Pergunta aqui" --back "Resposta aqui" \
+    --tags "<materia>,<topico>" \
+    --deck "Estudos::<Materia>::<Topico>" --subject "<Matéria>"
 ```
+
+Em lote, escreva um JSON com uma lista de objetos e passe o arquivo:
+
+```json
+[
+  {"front": "...", "back": "...", "tags": ["<materia>","<topico>"],
+   "deck": "Estudos::<Materia>::<Topico>", "subject": "<Matéria>"}
+]
+```
+
+```bash
+python3 scripts/revisar.py criar --json novos.json
+```
+
+O dedupe por `front` é automático — o comando reporta quantos adicionou e quantos pulou. Rodar o mesmo lote duas vezes é seguro.
 
 ---
 
@@ -320,53 +265,34 @@ decorar a redação literal do `front` em vez do conceito.
 - Variante muda o **cenário de superfície** (outro setor, outro exemplo), não o
   conceito nem a resposta certa.
 - Respeite o teto de 2 — mais que isso infla o banco sem ganho de retenção.
-- Aplique o mesmo dedupe por `front` do bloco "Adicionar cards novos ao banco" acima.
-- Registre a origem: `tags` da variante inclui o mesmo tópico do card original, para
+- Crie com `revisar.py criar` como qualquer outro card; o dedupe por `front` já vale.
+- Registre a origem: `--tags` da variante inclui o mesmo tópico do card original, para
   o relatório de calibração conseguir agrupá-los.
 
 ---
 
 ## Ver estatísticas rápidas
 
-```python
-conn = sqlite3.connect('./estudo/progresso/srs.db')
-row = conn.execute("""
-    SELECT
-        COUNT(*) total,
-        SUM(CASE WHEN due_date <= date('now') THEN 1 ELSE 0 END) due_hoje,
-        SUM(CASE WHEN state=0 THEN 1 ELSE 0 END) novos,
-        SUM(CASE WHEN state=2 THEN 1 ELSE 0 END) em_revisao
-    FROM cards
-""").fetchone()
-print(f"Total: {row[0]} | Vencidos hoje: {row[1]} | Novos: {row[2]} | Em revisão: {row[3]}")
+```bash
+python3 scripts/status.py
 ```
 
----
+Estado geral do estudo, backlog, gatilho de reentrada e **por onde a sessão começa**. É o passo zero de toda sessão — não improvise por cima dele.
 
 ---
 
 ## Fila intercalada — a ordem importa
 
 ```bash
-python3 scripts/status.py --fila
+python3 scripts/revisar.py pendentes      # já vem intercalada
+python3 scripts/status.py --fila          # mesma fila, na visão do status
 ```
 
-A fila padrão (`ORDER BY state DESC, due_date ASC`) tende a **agrupar** cards do mesmo tópico, porque cards do mesmo tópico foram criados juntos e vencem juntos. Isso é prática em bloco: o aluno responde no piloto automático, porque só existe um conceito em jogo.
+A fila crua (`ORDER BY state DESC, due_date ASC`) tende a **agrupar** cards do mesmo tópico, porque cards do mesmo tópico foram criados juntos e vencem juntos. Isso é prática em bloco: o aluno responde no piloto automático, porque só existe um conceito em jogo.
 
-A fila intercalada faz rodízio entre os decks, alternando tópicos. **Mesma quantidade de trabalho**, distribuída de forma a obrigar o aluno a decidir *qual* conceito se aplica — que é o que treina discriminação.
+A fila intercalada faz rodízio entre os decks, alternando tópicos. **Mesma quantidade de trabalho**, distribuída de forma a obrigar o aluno a decidir *qual* conceito se aplica — que é o que treina discriminação. O `pendentes` já aplica isso sozinho.
 
-```python
-import sys; sys.path.insert(0, 'scripts')
-import workspace as ws
-
-cards = conn.execute(
-    "SELECT * FROM cards WHERE due_date <= ? ORDER BY state DESC, due_date ASC LIMIT 20",
-    (today,)
-).fetchall()
-cards = ws.fila_intercalada(cards)   # rodízio entre decks
-```
-
-> Exceção: em **modo reentrada** a ordem é por maior estabilidade (§1b). Ali o objetivo é reacender o hábito, e empilhar dificuldade em cima de quem já está fragilizado pela ausência é o caminho errado.
+> Exceção: em **modo reentrada** (`--reentrada`) a ordem é por maior estabilidade (§1b). Ali o objetivo é reacender o hábito, e empilhar dificuldade em cima de quem já está fragilizado pela ausência é o caminho errado.
 
 ---
 
@@ -401,21 +327,9 @@ python3 scripts/status.py --performance
 
 A tabela `study_sessions` guarda o tempo cronometrado por `scripts/sessao.py`. **Ela nunca é lida sozinha.** Minuto isolado mede esforço, não aprendizado — celebrar "2h de estudo hoje" é exatamente a armadilha de medir engajamento no lugar de retenção, que o resto deste sistema existe para evitar.
 
-A leitura correta cruza tempo com o `review_log` da mesma data:
+A leitura correta cruza tempo com o `review_log` da mesma data, e é o que o `--performance` faz: minutos do dia, quantos cards foram revisados e quantos ficaram (rating ≥ 3).
 
-```python
-linhas = conn.execute("""
-    SELECT date(s.inicio) dia,
-           SUM(s.duracao_min) minutos,
-           (SELECT COUNT(*) FROM review_log r WHERE r.review_date = date(s.inicio)) revisados,
-           (SELECT COUNT(*) FROM review_log r WHERE r.review_date = date(s.inicio) AND r.rating >= 3) retidos
-    FROM study_sessions s WHERE s.fim IS NOT NULL AND s.interrompida = 0
-    GROUP BY dia ORDER BY dia DESC LIMIT 21
-""").fetchall()
-# custo por conceito retido = minutos / retidos
-```
-
-> **`interrompida = 0` não é detalhe.** Quando o aluno esquece de fechar a sessão, o script a encerra no dia seguinte com duração não confiável. Incluir essas linhas infla a contagem de sessões e polui o custo médio — o número passa a medir esquecimento em vez de estudo.
+> **Sessões interrompidas ficam de fora.** Quando o aluno esquece de fechar a sessão, o script a encerra no dia seguinte com duração não confiável. Incluir essas linhas infla a contagem de sessões e polui o custo médio — o número passa a medir esquecimento em vez de estudo.
 
 O número que interessa é **minutos por conceito retido**. Ele responde perguntas acionáveis:
 
@@ -429,8 +343,8 @@ Precisa de algumas semanas de dado para dizer qualquer coisa. Antes disso, mostr
 
 ## Notas importantes
 
+- **Nunca** escreva no `srs.db` por fora do `revisar.py` — nem com `sqlite3` inline, nem com Python na hora. Consulta pode; escrita, não.
 - **Nunca** mostrar o `back` antes do aluno responder
-- **Sempre** confirmar se o DB existe em `./estudo/progresso/srs.db` antes de começar
+- Se um comando falhar, **não contorne escrevendo SQL** — reporte o erro ao aluno. Um contorno improvisado é exatamente o que o script existe para evitar.
 - Em caso de dúvida no rating, pedir ao aluno para reformular — o objetivo é calibração honesta
 - Siga as preferências do `estudo/PERFIL.md` (por padrão: perguntas que exijam nome técnico + exemplo concreto + distinção entre conceitos parecidos — não só a ideia geral)
-- Intervalo `= round(stability)` dias — não precisa de fórmula complexa para o intervalo final

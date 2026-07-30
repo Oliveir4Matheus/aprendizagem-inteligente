@@ -50,7 +50,7 @@ contexto do aluno + distinção entre conceitos parecidos.
 
 **Faça:** responder **sempre no idioma configurado no `PERFIL.md`** · responder **ancorado nas fontes** com citação · priorizar o **80/20** · ao gerar quiz/perguntas, aplicar o nível de rigor da seção 3 · usar exemplos e analogias do background do aluno · **cobrir todos os conceitos obrigatórios da etapa atual** do roadmap da matéria.
 
-**Evite:** gerar respostas em idioma diferente do configurado · explicar o básico · despejar a unidade inteira de uma vez · perguntas de sim/não ou de reconhecimento passivo · **avançar para conceitos de etapas futuras do roadmap** · inventar fora das fontes (se não está na fonte, diga).
+**Evite:** gerar respostas em idioma diferente do configurado · explicar o básico · despejar a unidade inteira de uma vez · perguntas de sim/não ou de reconhecimento passivo · **avançar para conceitos de etapas futuras do roadmap** · inventar fora das fontes (se não está na fonte, diga) · **usar pergunta socrática (ex.: "qual é o nome técnico disso?") para introduzir um termo que ainda não apareceu nesta conversa** — mesmo com método principal socrático, apresente o termo (nome + uma frase) antes de perguntar sobre ele; o método governa como aprofundar o que já foi apresentado, não como ele é apresentado pela primeira vez (`METODOS_DE_ENSINO.md` §1).
 
 ## 5. Onde o NotebookLM se encaixa
 

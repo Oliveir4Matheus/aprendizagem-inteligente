@@ -19,7 +19,10 @@ O workspace tem **duas metades com regras opostas**: a raiz é *harness* (versio
 │    GUIA_NOTEBOOKLM.md                 ← persona/método (vira source)    │
 │    .agents/mcp_config.json            ← MCP com privilégio mínimo       │
 │    .agents/mcp_pin.json               ← commit auditado do MCP          │
-│    scripts/                           ← setup · auditoria · progresso   │
+│    scripts/status.py                  ← PASSO ZERO (por onde começar)   │
+│    scripts/revisar.py                 ← ÚNICA escrita no srs.db (FSRS)  │
+│    scripts/grafo.py                   ← grafo de conhecimento (HTML)    │
+│    scripts/  (demais)                 ← setup · auditoria · cronômetro  │
 │                                                                         │
 │  ▼ estudo/ (ignorado) ─ quem você é e o que estudou                     │
 │    PERFIL.md                          ← método, postura, rigor, idioma  │
@@ -28,6 +31,8 @@ O workspace tem **duas metades com regras opostas**: a raiz é *harness* (versio
 │    progresso/<materia>.md             ← LEDGER (estado + 80/20 + log)   │
 │    progresso/<materia>-roadmap.md     ← TRILHA (etapas + conceitos)     │
 │    progresso/srs.db                   ← FSRS = fonte da verdade         │
+│    progresso/<materia>-conceitos/     ← 1 arquivo por conceito = NÓS    │
+│    progresso/<materia>-grafo.html     ← grafo navegável (gerado)        │
 └─────────────────────────────────────────────────────────────────────────┘
                                    │
                     ┌──────────────┴───────────────┐
@@ -58,6 +63,16 @@ O workspace tem **duas metades com regras opostas**: a raiz é *harness* (versio
 
 Como as peças se relacionam. O `Perfil` é a peça central de configuração: é ele que
 resolve *qual* método, *qual* postura e *qual* rigor o agente usa em tempo de execução.
+
+Repare na **fronteira de escrita**: o agente não toca no `srs.db`. Ele chama `Revisar`
+(`scripts/revisar.py`), que é o único componente com permissão de escrever — e que carrega
+a fórmula do FSRS-5, o dedupe e as travas de idempotência. `TesteRevisar` existe para que
+essa fronteira continue valendo depois de qualquer refatoração.
+
+`Conceito` é o nó do **grafo de conhecimento**: um arquivo por conceito, com a anotação do
+aluno e as arestas. Note que ele depende de `Revisar` para o esquecimento (a retrievability
+do FSRS é o que faz o nó desbotar) e do `Roadmap` para as arestas — o grafo não inventa
+estrutura, ele materializa a que o roadmap já declarava em prosa.
 
 ```mermaid
 classDiagram
@@ -132,11 +147,40 @@ classDiagram
     }
 
     class SRS {
+        <<srs.db>>
         +Path db
-        +buscarVencidos(hoje) List~Card~
-        +buscarReentrada(teto) List~Card~
-        +gravarRevisao(card, rating)
-        +criarCard(front, back)
+        +List~Card~ cards
+        +List~ReviewLog~ reviewLog
+    }
+
+    class Revisar {
+        <<scripts/revisar.py — ÚNICO ponto de escrita>>
+        +List~float~ W
+        +float RETENCAO_ALVO
+        +pendentes(reentrada) List~Card~
+        +revisar(cardId, rating, confianca, tentativas, usouDica, tipoItem)
+        +criar(front, back, deck, subject, tags)
+        +espalhar(dias, confirmado)
+        +calcularFSRS(state, d, s, lastReview, rating) Agendamento
+    }
+
+    class Agendamento {
+        +int state
+        +float difficulty
+        +float stability
+        +int interval
+        +Date dueDate
+    }
+
+    class ReviewLog {
+        +Date reviewDate
+        +int rating
+        +int elapsedDays
+        +int intervalDays
+        +int confianca
+        +int tentativas
+        +int usouDica
+        +String tipoItem
     }
 
     class StatusDaSessao {
@@ -196,6 +240,43 @@ classDiagram
         +String status
     }
 
+    class Conceito {
+        <<progresso/<materia>-conceitos/*.md>>
+        +String id
+        +String nome
+        +int etapa
+        +String status
+        +bool pontoFraco
+        +String notaOrigem
+        +String nota
+        +List~int~ cards
+        +List~Aresta~ conectaCom
+        +List~Aresta~ preparaPara
+    }
+
+    class Aresta {
+        +String id
+        +String porque
+        +String tipo
+    }
+
+    class Grafo {
+        <<scripts/grafo.py>>
+        +carregarConceitos(pasta) List~Conceito~
+        +anexarSRS(conceitos) Retencao
+        +normalizarArestas() List~Aresta~
+        +validar() problemas_e_pendencias
+        +gerarHTML() String
+    }
+
+    class TesteRevisar {
+        <<scripts/test_revisar.py>>
+        +testeRating2NaoCongela()
+        +testeRevisarIdempotente()
+        +testeCriarDeduplica()
+        +testeEspalharPreservaModelo()
+    }
+
     class Setup {
         +int TOTAL_STEPS
         +rodarPassos1a8()
@@ -229,16 +310,31 @@ classDiagram
 
     AgenteOrquestrador --> Ledger : lê e escreve
     AgenteOrquestrador --> Roadmap : extrai conceitos da etapa
-    AgenteOrquestrador --> SRS : agenda e grava
+    AgenteOrquestrador --> Revisar : CLI — nunca SQL na hora
     AgenteOrquestrador --> MCPNotebookLM : opera
+    Revisar --> SRS : ÚNICA escrita · idempotente
+    Revisar ..> Agendamento : calcularFSRS devolve
+    NivelDeRigor ..> Revisar : rating vira --rating
+    TesteRevisar ..> Revisar : trava a fórmula e as garantias
 
     Roadmap "1" *-- "4..8" Etapa
     Ledger "1" --> "1" Roadmap : aponta
     SRS "1" *-- "0..*" Card
+    SRS "1" *-- "0..*" ReviewLog
+    Card "1" --> "0..*" ReviewLog : histórico
     MCPNotebookLM --> Notebook
     Notebook "1" *-- "1..*" Source
     Notebook "1" *-- "0..*" Artefato
     Etapa ..> Artefato : conceitos viram focusPrompt
+
+    Grafo --> Conceito : lê a pasta
+    Grafo --> Revisar : retrievability(FSRS)
+    Grafo ..> Aresta : normaliza no sentido do fluxo
+    Conceito "1" *-- "0..*" Aresta
+    Conceito ..> Card : cards[] fazem o nó desbotar
+    Roadmap ..> Conceito : conecta_com e prepara_para viram arestas
+    NivelDeRigor ..> Conceito : nota entra só se passou no portão
+    AgenteOrquestrador --> Conceito : grava a explicação do ALUNO
 
     Setup --> AuditorMCP : passo 4
     AuditorMCP --> MCPNotebookLM : pina o commit
@@ -261,19 +357,29 @@ sequenceDiagram
     actor Aluno
     participant M as MNEMO (agente)
     participant WS as Workspace (estudo/)
+    participant RV as revisar.py
+    participant SRS as srs.db (FSRS)
     participant MCP as MCP notebooklm
     participant NLM as NotebookLM
-    participant SRS as srs.db (FSRS)
 
+    Note over M,SRS: O agente NUNCA escreve no srs.db direto — só via revisar.py
     Aluno->>M: abre o agente no diretório
     M->>WS: PASSO ZERO — scripts/status.py
     WS-->>M: estado + próximo passo (fase2 / reentrada / revisão / loop)
     alt modo reentrada disparado
         Note over M,SRS: 10+ dias ausente ou backlog acima de 15
-        M->>SRS: buscarReentrada(teto=8) ordenado por MAIOR estabilidade
+        M->>RV: pendentes --reentrada (teto=8, MAIOR estabilidade)
+        RV->>SRS: SELECT
+        SRS-->>RV: 8 cards
+        RV-->>M: fila
         M->>Aluno: 8 cards, dica antecipada, zero conteúdo novo
         M->>Aluno: oferece espalhar o backlog restante
         Aluno-->>M: autoriza ou não
+        opt autorizou
+            M->>RV: espalhar --dias 5 --confirmar
+            RV->>SRS: reagenda só due_date
+            Note over RV,SRS: sem --confirmar o comando RECUSA
+        end
     end
     M->>WS: lê PERFIL.md
     alt PERFIL com placeholders
@@ -282,13 +388,14 @@ sequenceDiagram
         M->>WS: grava PERFIL.md
     end
     M->>WS: lê _index.md, ledger e roadmap
-    M->>SRS: buscarVencidos(hoje)
-    SRS-->>M: N cards vencidos
+    M->>RV: pendentes --json (fila intercalada por tópico)
+    RV-->>M: N cards vencidos
 
     alt há revisão vencida
         M->>Aluno: revisão FSRS primeiro (cloze)
         Aluno-->>M: respostas
-        M->>SRS: gravarRevisao(card, rating)
+        M->>RV: revisar --card-id --rating ...
+        RV->>SRS: UPDATE cards + INSERT review_log (1 transação)
     end
 
     Note over M,WS: FASE 1 — PREP
@@ -325,8 +432,22 @@ sequenceDiagram
             Note right of M: rating limitado a 2
         end
         M->>M: avalia -> rating 1..4
+        M->>RV: revisar --rating --confianca --tentativas --usou-dica --tipo-item
+        RV->>SRS: calcula FSRS-5 e grava
+        RV-->>M: próxima revisão em AAAA-MM-DD (N dias)
+        Note over RV,SRS: repetir o mesmo card hoje não altera nada
     end
-    M->>SRS: gravarRevisao + criarCard(erros)
+    M->>RV: criar (cards dos erros — dedupe por front)
+    alt conceito passou no portão
+        M->>NLM: confere a explicação do ALUNO na fonte (com citação)
+        NLM-->>M: casa / divergiu
+        alt casou
+            M->>WS: grava <materia>-conceitos/<id>.md (nota_origem: aluno)
+        else divergiu
+            Note over M,WS: NÃO grava nota — divergência vira pontos_fracos
+        end
+        M->>WS: grafo.py — regera <materia>-grafo.html
+    end
     M->>WS: ledger (status, retomar_em, pontos_fracos)
     M->>WS: ultima_sessao = hoje · LIMPA fase2_iniciada_em
     M->>WS: roadmap (etapa_atual) e _index.md
@@ -374,14 +495,14 @@ flowchart TD
 flowchart TD
     ST[/PASSO ZERO<br/>python3 scripts/status.py/] --> D0{Qual o próximo passo<br/>que o script apontou?}
 
-    D0 -- reentrada --> RE[MODO REENTRADA<br/>teto de 8 cards · maior estabilidade primeiro<br/>dica antecipada · zero conteúdo novo]
+    D0 -- reentrada --> RE[MODO REENTRADA<br/>revisar.py pendentes --reentrada<br/>teto de 8 · maior estabilidade primeiro<br/>dica antecipada · zero conteúdo novo]
     RE --> RE2{Espalhar o backlog<br/>restante?}
-    RE2 -- só com autorização --> RE3[/Reagenda due_date<br/>e registra no log/]
+    RE2 -- só com autorização --> RE3[/revisar.py espalhar --dias 5 --confirmar<br/>mexe só em due_date/]
     RE2 -- não --> End
     RE3 --> End
 
     D0 -- fase2 pendente --> W
-    D0 -- revisão vencida --> R2[Revisão espaçada primeiro<br/>fila intercalada por tópico]
+    D0 -- revisão vencida --> R2[Revisão espaçada primeiro<br/>revisar.py pendentes<br/>fila intercalada por tópico]
     D0 -- sem matéria --> N1
     D0 -- seguir o loop --> R1
     R2 --> R1
@@ -417,11 +538,14 @@ flowchart TD
     G1 --> G2{Pediu dica?}
     G2 -- sim --> G3[Devolve contexto<br/>rating limitado a 2]
     G2 -- não --> G4
-    G3 --> G4[Avalia: rating 1-4<br/>grava confiança · tentativas · dica]
-    G4 --> G5{Cobriu as cotas?}
+    G3 --> G4[Avalia: rating 1-4]
+    G4 --> G4b[/revisar.py revisar --rating --confianca<br/>--tentativas --usou-dica --tipo-item<br/>idempotente: 2ª vez no dia não altera nada/]
+    G4b --> G5{Cobriu as cotas?}
     G5 -- não --> G0
     G5 -- sim --> G5b[/Devolve o desencontro:<br/>previu 6, acertou 4/]
-    G5b --> G6[/Grava FSRS · ledger · roadmap · log<br/>ultima_sessao · LIMPA fase2_iniciada_em/]
+    G5b --> G5c[/Confere a explicação do ALUNO na fonte<br/>casou: grava o nó do conceito<br/>divergiu: vira ponto_fraco, sem nota/]
+    G5c --> G5d[/grafo.py — nó novo no grafo<br/>desbota conforme o FSRS decai/]
+    G5d --> G6[/revisar.py criar cards dos erros<br/>+ ledger · roadmap · log<br/>ultima_sessao · LIMPA fase2_iniciada_em/]
 
     G6 --> G7{Passou no PORTÃO?<br/>2 itens N4 sem dica}
     G7 -- não --> G8[Etapa segue em_andamento<br/>falhas viram pontos_fracos]
@@ -436,7 +560,7 @@ flowchart TD
     class D0,N3,W,T1,G2,G5,G7,RE2 decisao
     class R1,F2,F3 fase
     class RE,V2 alerta
-    class G0,G5b,C1 meta
+    class G0,G5b,C1,G4b,G5c,G5d meta
 ```
 
 > **Por que o passo zero é um script e não uma instrução.** O gatilho da Fase 2 abandonada e o modo reentrada são exatamente o tipo de verificação que um agente com o contexto cheio deixa de fazer — e a falha é silenciosa, porque ninguém sente falta de uma checagem que não aconteceu. Tirando a decisão da memória do agente e colocando numa saída de terminal, ela passa a acontecer mesmo quando ele está distraído.
@@ -487,11 +611,20 @@ flowchart TD
       │
       ├─► ledger: status, retomar_em, pontos_fracos
       ├─► ledger: ultima_sessao ← hoje · fase2_iniciada_em ← vazio
-      ├─► srs.db: rating 1-4 + FSRS → próxima data
+      ├─► revisar.py revisar: rating 1-4 + FSRS → próxima data
       ├─► roadmap: etapa_atual + status da etapa
-      ├─► cards novos (dos erros) + linha no Log
+      ├─► revisar.py criar: cards dos erros + linha no Log
+      ├─► conceito dominado → nó no grafo (nota = explicação do ALUNO,
+      │                       conferida na fonte) + grafo.py regera o HTML
       └─► etapa dominada → badge jornada_do_heroi.jpg + JORNADA.md
 ```
+
+> **Toda escrita no `srs.db` passa pelo `revisar.py`** — nunca por SQL que o agente digita
+> na hora. Foi assim até esta versão, e o custo apareceu: sem idempotência, uma sessão que
+> caía no meio duplicava linha no `review_log`; e a fórmula copiada era editável, o que já
+> produziu o bug do `W[15]` zerado (card com rating 2 congelado para sempre). A divisão é
+> **julgamento é prompt, mecânica é código**: o agente decide o rating, o script calcula e grava.
+> `python3 scripts/test_revisar.py` mantém a fronteira honesta.
 
 > **Regra fixa:** o recall da Fase 3 é **produção ativa**, não reconhecimento — mesmo que o quiz do NotebookLM já tenha sido feito. Formato e severidade saem do nível de rigor (`METODOS_DE_ENSINO.md` §2).
 
@@ -505,6 +638,10 @@ flowchart TD
 |---|---|---|
 | **Agente orquestrador** | Conduz o loop, lê/escreve arquivos | Agente com acesso ao workspace |
 | **`scripts/status.py`** | Passo zero: decide por onde a sessão começa | Gatilho que **não** pode depender da memória do agente |
+| **`scripts/revisar.py`** | **Único ponto de escrita no `srs.db`**: FSRS-5, criação de cards, backlog | Fórmula e idempotência **não** podem depender de qual modelo está rodando |
+| **`scripts/grafo.py`** | Grafo de conhecimento navegável: conceito + FSRS → HTML autocontido | O nó **desbota** com o esquecimento; grafo que só cresce mente sobre domínio |
+| **`<materia>-conceitos/*.md`** | Um nó por arquivo: anotação do aluno + arestas + cards | Diff legível, edição cirúrgica — e é um vault de Obsidian de graça |
+| **`scripts/test_revisar.py`** | Trava a fórmula e as garantias (regressão do `W[15]`) | Código dá para testar; snippet em prosa, não |
 | **`scripts/sessao.py`** | Cronômetro em blocos de foco | Tempo medido por relógio, não por estimativa de conversa |
 | **`SKILL.md`** | O "cérebro": persona, 80/20, as 3 fases | Instruções que o agente segue |
 | **`METODOS_DE_ENSINO.md`** | Roteiro de cada método, escala de rigor, posturas | O *como ensinar* configurável |
