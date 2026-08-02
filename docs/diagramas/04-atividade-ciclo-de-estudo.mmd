@@ -22,9 +22,15 @@ flowchart TD
     R1[FASE 1 — PREP] --> P1[Extrai conceitos da etapa<br/>+ conecta_com + prepara_para]
     P1 --> P1b[Amarra no que já foi dominado<br/>antes do conteúdo novo]
     P1b --> P2[Recorta a fonte para<br/>documentos/materia-etapa.md]
-    P2 --> P3[source_add: recorte + PERFIL + GUIA]
-    P3 --> P4[studio_create de cada artefato<br/>focusPrompt = conceitos da etapa]
-    P4 --> P5[/Avisa o aluno + prompt calibrado<br/>grava fase2_iniciada_em/]
+    P2 --> P2b[/DECOMPÕE a etapa em 3-6 subtópicos<br/>autonomia · ~6 min · testável · par contrastivo junto<br/>grava no roadmap e congela/]
+    P2b --> P3[source_add: recorte + PERFIL + GUIA]
+    P3 --> P3b{Conta do volume<br/>tipos x subtópicos}
+    P3b -- "> 20" --> P3c[Pergunta ao aluno<br/>antes de gerar]
+    P3c --> P4
+    P3b -- "<= 20" --> P4[studio_create POR SUBTÓPICO<br/>bloco FORMATO vem de artefatos/tipo.md<br/>focusPrompt = conceitos DO SUBTÓPICO]
+    P4 --> P4b[Integradores da etapa<br/>mind_map · data_table · quiz integrador]
+    P4b --> P4c[rename: E-n.m · subtópico — tipo]
+    P4c --> P5[/Avisa o aluno + ordem de consumo<br/>+ prompt calibrado<br/>grava fase2_iniciada_em/]
 
     P5 --> F2[FASE 2 — STUDY<br/>aluno consome no NotebookLM]
     F2 --> T1{Aluno disse<br/>iniciar?}

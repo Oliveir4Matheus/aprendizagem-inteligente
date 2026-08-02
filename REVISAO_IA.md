@@ -94,6 +94,16 @@ Leitura só de consulta (estatística, auditoria) pode ser feita direto com `sql
 
 ## Passo a passo da sessão
 
+### 0. Pergunte quem conduz — antes de qualquer card
+
+Toda revisão (e todo recall de Fase 3) começa com a mesma pergunta ao aluno:
+
+> *"Quer fazer a revisão comigo aqui, ou prefere que eu gere um prompt para você fazer com um agente externo e depois me trazer o resultado?"*
+
+A escolha é dele, sempre — não presuma nenhuma das duas. Se ele escolher o agente externo, gere o prompt a partir de [`templates/recall-externo.md`](templates/recall-externo.md) e salve em `estudo/atividades/`.
+
+**O que a via externa NÃO muda:** os cards já precisam existir no banco (o resultado volta por `card_id`), a régua do rigor vai escrita dentro do prompt, e **a escrita continua sendo sua** — `revisar.py revisar` card a card, com os mesmos campos. Ao receber o bloco, confira a coerência: `usou_dica=1` com rating acima de 2 é erro do agente externo, rebaixe para 2 e avise o aluno.
+
 ### 1. Buscar cards devidos
 
 ```bash

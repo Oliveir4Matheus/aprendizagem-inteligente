@@ -13,8 +13,9 @@ total_etapas: 6
 > **propõe** esta trilha, e só grava depois do seu OK. Ver `COOKBOOK.md` → Parte B.
 >
 > **Como ele é usado:** o agente extrai daqui os **conceitos obrigatórios da etapa
-> atual** e os injeta no `focus_prompt` de cada artefato do NotebookLM e nas perguntas
-> do recall. É o trilho que impede o material de avançar para etapas futuras.
+> atual**, agrupa-os nos **subtópicos** declarados na etapa, e injeta a lista de cada
+> subtópico no `focus_prompt` dos artefatos daquele subtópico e nas perguntas do recall.
+> É o trilho que impede o material de avançar para etapas futuras.
 >
 > **Este arquivo é conteúdo de estudo** — vive em `estudo/` e nunca vai para o git.
 
@@ -40,6 +41,22 @@ Conceitos obrigatórios (o artefato e o recall precisam cobrir **todos**):
 - **<Conceito A>**: <o que exatamente o aluno precisa saber sobre ele>
 - **<Conceito B>**: <idem — inclua a distinção contra o conceito que costuma ser confundido>
 - **<Conceito C>**: <idem>
+
+**subtopicos:** _(preenchido na primeira PREP da etapa; congelado até ela fechar)_
+
+| # | Subtópico | Conceitos que ele cobre |
+|---|---|---|
+| 1 | <Subtópico 1> | <Conceito A> |
+| 2 | <Subtópico 2> | <Conceito B>, <Conceito C> |
+
+> **Como agrupar** (`artefatos/_index.md` §2): 3 a 6 subtópicos, cada um autônomo (não depende
+> de subtópico posterior), do tamanho de ~6 min de explicação, e testável sozinho no recall.
+> **Par que só existe em contraste (X vs. Y) fica junto, num subtópico só** — separá-lo destrói
+> a discriminação que o aluno precisa treinar.
+>
+> É a partir daqui que o material é gerado: **um conjunto de artefatos por subtópico**, mais os
+> integradores da etapa. Trocar os subtópicos com a etapa aberta desalinha o material já
+> entregue do recall que vai cobrá-lo.
 
 **Fora de escopo nesta etapa:** <o que NÃO pode aparecer ainda, para o material não vazar>
 

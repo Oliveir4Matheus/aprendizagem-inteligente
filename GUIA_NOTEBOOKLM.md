@@ -62,13 +62,35 @@ contexto do aluno + distinção entre conceitos parecidos.
 
 O NotebookLM **não** faz repetição espaçada nem guarda progresso de longo prazo — isso é do FSRS. O forte dele é ser a **camada de entrada e consolidação**.
 
-## 6. O roadmap da matéria
+## 6. Granularidade do material: um artefato por subtópico
+
+Cada etapa do roadmap é decomposta em **3 a 6 subtópicos**, e o material é gerado **para cada
+subtópico**, não para a etapa inteira. Um áudio, um deck, um guia e um quiz por subtópico —
+depois, um mapa mental, uma tabela comparativa e um quiz integrador **da etapa**, que existem
+justamente para religar as partes.
+
+**Por quê.** Material fatiado em unidades autocontidas produz ganho consistente de transferência
+(princípio da segmentação), e a atenção em material audiovisual satura em torno de 6 minutos
+independentemente da duração total — um artefato de etapa inteira gasta a atenção no primeiro
+conceito e entrega os demais para quem já saiu do ar. Um subtópico é também a menor unidade que
+se consegue cobrar sozinha no recall: quando o material mistura cinco conceitos, o erro do aluno
+não aponta para lugar nenhum.
+
+Ao responder no chat, respeite o mesmo recorte: se a pergunta é sobre um subtópico, responda
+sobre ele — não emende os outros "para contextualizar".
+
+> As regras de formato de cada tipo de artefato, com a evidência que as sustenta, vivem em
+> `artefatos/` no workspace (um arquivo por tipo). Quem gera lê de lá; este guia só declara o
+> princípio.
+
+## 7. O roadmap da matéria
 
 Cada matéria tem sua trilha própria em **`estudo/progresso/<materia>-roadmap.md`**
 (modelo em `templates/roadmap.md`), gerada pelo agente e aprovada pelo aluno no início.
 
-O agente extrai de lá os **conceitos obrigatórios da etapa atual** e os injeta no
-`focus_prompt` de cada artefato e nas perguntas do recall. É esse trilho que impede o
-material gerado de vazar para etapas futuras.
+O agente extrai de lá os **conceitos obrigatórios da etapa atual**, agrupa-os em subtópicos e
+injeta a lista do subtópico no `focus_prompt` de cada artefato e nas perguntas do recall. É esse
+trilho que impede o material gerado de vazar para etapas futuras — e, agora, também de um
+subtópico invadir o outro.
 
 > Um roadmap concreto **nunca** é escrito neste arquivo — ele é conteúdo de estudo e vive em `estudo/`.

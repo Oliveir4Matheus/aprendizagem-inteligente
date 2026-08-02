@@ -210,10 +210,21 @@ Leia `estudo/progresso/<materia>.md` → `retomar_em` + `pontos_fracos`. Se houv
 ### C2. [AGENTE] FASE 1 — PREP (via MCP)
 1. Abra o roadmap → extraia os **conceitos obrigatórios da etapa atual** e o que está fora de escopo.
 2. **Recorte a fonte:** salve `estudo/documentos/<materia>-<etapa>.md` só com o conteúdo da etapa. **Não suba o PDF inteiro.**
+2b. **Decomponha a etapa em 3 a 6 subtópicos** (`artefatos/_index.md` §2). Etapa já aberta → use os que estão no roadmap. Primeira PREP da etapa → proponha, grave no campo `subtopicos` da etapa e congele até ela fechar.
 3. `notebook_list` / `notebook_create` → garanta o notebook da matéria.
 4. `source_add` → o `.md` recortado **+ `estudo/PERFIL.md` + `GUIA_NOTEBOOKLM.md`**.
-5. `studio_create` → um por artefato do conjunto padrão do `PERFIL.md`. Acompanhe com `studio_status`. Em **todo** `focus_prompt`: a lista de conceitos da etapa + proibição de avançar + `language` do perfil.
-6. Avise: etapa, 80/20, o que ficou pronto, e entregue o **prompt calibrado** para o chat.
+5. `studio_create` → **um por artefato POR SUBTÓPICO**, mais os integradores da etapa no fim:
+
+   | Por subtópico | Por etapa (depois de todos) |
+   |---|---|
+   | `audio` · `video` · `slide_deck` · `report` · `infographic` · `quiz` · `flashcards` | `mind_map` · `data_table` · quiz integrador |
+
+   Antes de disparar, faça a conta: `(tipos por subtópico × nº subtópicos) + tipos por etapa`. Passou de 12, avise o aluno; passou de 20, pare e pergunte.
+
+   O `focus_prompt` de cada um segue o esqueleto do `artefatos/_index.md` §5 — o bloco `[FORMATO]` é **copiado do arquivo do tipo** em `artefatos/<tipo>.md`, não improvisado. Em **todo** `[ESCOPO]`: conceitos **do subtópico** + proibição de citar os outros subtópicos e etapas futuras + `language` do perfil.
+
+   Acompanhe com `studio_status` e renomeie tudo: `studio_status(action="rename", ...)` → `E<etapa>.<subtópico> · <Nome> — <Tipo>`.
+6. Avise: etapa, **quais são os subtópicos e em que ordem consumir**, 80/20, o que ficou pronto, e entregue o **prompt calibrado** para o chat. Lista numerada por subtópico, não agrupada por tipo.
 7. **Grave `fase2_iniciada_em: <hoje>` no ledger.** Sem isso o material entregue pode virar consumo passivo esquecido, sem ninguém notar.
 8. Convide a cronometrar: *"quando for começar, me diga **iniciar**."*
 
@@ -347,3 +358,9 @@ Depois de aplicar, **reinicie o agente** para recarregar o MCP.
 | "Compartilhar" não funciona | é de propósito (least privilege) | manter desligado |
 | Artefato saiu no idioma errado | `language` não foi passado | conferir o `language` do perfil no `studio_create` e se `PERFIL.md` está como source |
 | O material avançou pra etapa futura | `focus_prompt` sem o trilho | reincluir a lista de conceitos da etapa + a proibição explícita |
+| Saiu 1 artefato só, cobrindo a etapa inteira | PREP pulou a decomposição em subtópicos | refazer o passo C2.2b e regerar por subtópico (`artefatos/_index.md`) |
+| Todo artefato de subtópico repete a etapa inteira "pra contextualizar" | faltou a 2ª trava do `[ESCOPO]` | reincluir a proibição de citar os **outros subtópicos**, nomeando-os |
+| Deck saiu como lista de tópicos | `focus_prompt` sem o bloco `[FORMATO]` do tipo | copiar o bloco de `artefatos/slide_deck.md`; regerar ou usar `studio_revise` nos slides ruins |
+| Guia de estudo saiu como resumo corrido | idem | copiar o bloco de `artefatos/report.md` — o formato é guia de perguntas, não resumo |
+| Quiz fácil demais, o aluno acerta tudo | distratores fracos | `artefatos/quiz.md` §2: distrator tem de vir de uma confusão real e nomeável |
+| Volume de artefatos assustou o aluno | conta de volume não foi feita | cortar para 2–3 tipos por subtópico (`artefatos/_index.md` §4) |

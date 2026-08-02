@@ -65,10 +65,12 @@ Se o aluno disser algo do tipo *"da próxima vez faça X"*, *"não gere Y"*, *"p
 - **Modo reentrada tem precedência sobre revisão normal.** Quem volta de uma ausência recebe teto de cards e ordem por maior estabilidade — nunca a fila inteira de vencidos.
 - **Tempo nunca é reportado sozinho.** `study_sessions` só é lida cruzada com o `review_log` (`status.py --performance`). Minuto isolado mede esforço, não retenção.
 - **Fase 3 = recall com o mínimo de perguntas definido no `PERFIL.md`** (padrão 7), em **produção ativa** (cloze progressivo), mesmo que o aluno já tenha feito o quiz no NotebookLM.
+- **Quem conduz o recall é escolha do aluno, e você pergunta.** Ao fim da Fase 2 e ao início de toda revisão: conduzir com você ou com um **agente externo** (prompt gerado de `templates/recall-externo.md`, salvo em `estudo/atividades/`). Delegar a condução **não delega a contabilidade** — a escrita no `srs.db`, o ledger, o mapa, o grafo e o portão N4 continuam sendo seus.
 - **`estudo/progresso/srs.db` (FSRS) é a fonte da verdade do progresso** — o mastery do NotebookLM é secundário.
 - **A anotação do nó do grafo é a explicação do ALUNO, conferida na fonte.** Nunca escreva sua própria síntese na seção "O que é" de um conceito: capture o que o aluno disse no item de portão aprovado, confira contra a fonte (NotebookLM, com citação) e só então grave. Divergência vira `pontos_fracos` no ledger — não nota. Um resumo que o aluno não produziu não tem o valor de recuperação de um que ele produziu, e é por isso que o campo `nota_origem` existe.
 - **Nunca escreva no `srs.db` fora do `scripts/revisar.py`.** Nada de SQL ou Python digitado na hora para gravar revisão, criar card ou mexer em `due_date` — a fórmula do FSRS e as travas de idempotência estão no script justamente para o resultado não depender de qual agente está rodando. Consulta de leitura, à vontade. Se um comando falhar, reporte o erro; não improvise um contorno.
 - **Nunca avance para conceitos de etapas futuras do roadmap.** O `focus_prompt` de todo artefato leva a lista de conceitos obrigatórios da etapa atual.
+- **Material do NotebookLM é gerado por SUBTÓPICO, não por etapa.** Toda PREP decompõe a etapa em 3 a 6 subtópicos e gera o conjunto de artefatos **de cada um**; só `mind_map`, `data_table` e o quiz integrador são por etapa. As regras de cada tipo estão em **`artefatos/`** — um arquivo por tipo, e **nenhum artefato se gera sem ler o arquivo do tipo**. A granularidade é regra do sistema; o `PERFIL.md` escolhe quais tipos, não em que recorte.
 - **Least privilege:** não reative grupos de MCP desabilitados em `.agents/mcp_config.json` (sharing/automation ficam OFF de propósito).
 - **Atualização do MCP:** só suba o pin depois de rodar `python3 scripts/mcp_update.py` e o aluno aprovar a auditoria. Nunca atualize silenciosamente.
 - **Segurança:** o MCP dirige uma sessão real do Google (conta dedicada). Nunca exponha cookies/sessão em logs.
@@ -86,6 +88,9 @@ Se o aluno disser algo do tipo *"da próxima vez faça X"*, *"não gere Y"*, *"p
 | `COOKBOOK.md` | Runbook: onboarding, setup, atualização do MCP, operação |
 | `ARQUITETURA.md` | Visão geral + diagramas de classes, sequência e atividade |
 | `GUIA_NOTEBOOKLM.md` | Persona/método para subir como fonte no NotebookLM |
+| `artefatos/_index.md` | Como decompor a etapa em subtópicos + matriz de granularidade + esqueleto do `focus_prompt` |
+| `artefatos/<tipo>.md` | Regra de formato de **um** tipo de artefato (`audio`, `video`, `slide_deck`, `report`, `quiz`, `flashcards`, `infographic`, `mind_map`, `data_table`) |
+| `artefatos/REFERENCIAS.md` | A evidência por trás de cada regra de formato |
 | `REVISAO_IA.md` | Protocolo da revisão interativa (cloze, rigor, rating, calibração) |
 | `.agents/mcp_config.json` | Config do MCP `notebooklm` (privilégio mínimo) |
 | `scripts/status.py` | **Passo zero da sessão** — estado + por onde começar |
@@ -94,6 +99,7 @@ Se o aluno disser algo do tipo *"da próxima vez faça X"*, *"não gere Y"*, *"p
 | `scripts/test_revisar.py` | Regressão da fórmula FSRS e das travas de idempotência |
 | `scripts/test_grafo.py` | Regressão do parser de conceitos e do HTML do grafo |
 | `templates/conceito.md` | Modelo de um nó do grafo (um arquivo por conceito) |
+| `templates/recall-externo.md` | Molde do prompt que delega o recall/revisão a um agente externo |
 | `scripts/sessao.py` | Cronômetro em blocos de foco (`iniciar` / `fim`) |
 | `scripts/setup.py` | Setup multiplataforma com barra de progresso |
 | `scripts/mcp_update.py` | Checagem de atualização + auditoria de segurança do MCP |

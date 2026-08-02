@@ -156,11 +156,26 @@ classDiagram
         +String tipo
         +String origem
     }
+    class Subtopico {
+        +int ordem
+        +String nome
+        +List~String~ conceitos
+        +congeladoEnquantoEtapaAberta()
+    }
     class Artefato {
         +String tipo
+        +String granularidade
+        +String subtopico
         +String focusPrompt
         +String idioma
         +String status
+    }
+    class RegraDeArtefato {
+        <<artefatos/*.md>>
+        +String arquivo
+        +String granularidade
+        +String papel
+        +String blocoFormato
     }
 
     class Conceito {
@@ -248,7 +263,10 @@ classDiagram
     MCPNotebookLM --> Notebook
     Notebook "1" *-- "1..*" Source
     Notebook "1" *-- "0..*" Artefato
-    Etapa ..> Artefato : conceitos viram focusPrompt
+    Etapa "1" *-- "3..6" Subtopico
+    Subtopico ..> Artefato : conceitos viram o ESCOPO do focusPrompt
+    Etapa ..> Artefato : só os integradores (mind_map, data_table, quiz)
+    RegraDeArtefato ..> Artefato : define o bloco FORMATO
 
     Grafo --> Conceito : lê a pasta
     Grafo --> Revisar : retrievability(FSRS)

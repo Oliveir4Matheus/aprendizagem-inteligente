@@ -8,7 +8,7 @@
 > **Este arquivo é conteúdo pessoal** — vive em `estudo/` e nunca vai para o git.
 
 ## Identidade
-- **Como chamar:** _(ex.: Matheus)_
+- **Como chamar:** _(seu primeiro nome, ou o apelido que preferir)_
 - **Nível / experiência:** _(ex.: desenvolvedor pleno; iniciante; sênior; estudante de outra área)_
 - **Área / background:** _(o que já faz — usado para ancorar exemplos. ex.: dev backend; BI/dados; direito)_
 
@@ -57,18 +57,37 @@
 
 ## Produção no NotebookLM
 
+> **Como o material é gerado.** Cada etapa é decomposta em **3 a 6 subtópicos**, e o conjunto
+> de artefatos é gerado **para cada subtópico** — não um artefato para a etapa inteira. Alguns
+> tipos fogem à regra por serem integradores: eles existem para ligar os subtópicos entre si e
+> por isso são **um por etapa**. Essa granularidade é regra do sistema (`artefatos/_index.md`),
+> não preferência: aqui você escolhe **quais tipos**, não em que recorte.
+
 - **Idioma do conteúdo gerado:** _(ex.: pt-BR — vale para artefatos, chat e interações do agente)_
-- **Artefatos padrão por tópico:** _(marque os que o agente sempre gera, sem precisar pedir)_
-  - [ ] `audio` — Áudio Overview / podcast _(duração preferida: ___)_
-  - [ ] `video` — Video Overview
-  - [ ] `infographic` — Infográfico
-  - [ ] `mind_map` — Mapa mental
-  - [ ] `slide_deck` — Apresentação
-  - [ ] `quiz` — Teste de múltipla escolha
-  - [ ] `flashcards` — Flashcards
-  - [ ] `report` — Relatório / Study Guide
-  - [ ] `data_table` — Tabela estruturada
+- **Artefatos padrão:** _(marque os que o agente sempre gera, sem precisar pedir)_
+
+  **Por subtópico** — recomendado marcar de 2 a 3, um de cada coluna:
+
+  | | Tipo | Papel |
+  |---|---|---|
+  | [ ] | `audio` — Áudio Overview / podcast _(alvo: 5–10 min)_ | exposição |
+  | [ ] | `video` — Video Overview _(alvo: 4–6 min)_ | exposição |
+  | [ ] | `slide_deck` — Apresentação _(6–12 slides)_ | exposição |
+  | [ ] | `report` — Guia de estudo | consolidação |
+  | [ ] | `infographic` — Infográfico | consolidação |
+  | [ ] | `quiz` — Teste de múltipla escolha _(5–8 itens)_ | teste |
+  | [ ] | `flashcards` — Flashcards _(6–12 cards)_ | teste |
+
+  **Por etapa (integradores)** — ligam os subtópicos; não são fatiados:
+
+  | | Tipo | Papel |
+  |---|---|---|
+  | [ ] | `mind_map` — Mapa mental da etapa | integrador |
+  | [ ] | `data_table` — Tabela comparativa da etapa | integrador |
+  | [ ] | `quiz` integrador da etapa _(10–12 itens, subtópicos misturados)_ | integrador |
+
 - **Sob demanda:** _(os que o agente só gera se você pedir)_
+- **Teto de artefatos por etapa:** _(padrão: avisar acima de 12, perguntar antes de passar de 20)_
 
 ## Tutor
 

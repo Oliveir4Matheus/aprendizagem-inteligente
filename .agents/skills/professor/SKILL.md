@@ -30,6 +30,9 @@ ensino. Ela não pode competir com o conteúdo por atenção.
 **Configuração (harness — raiz):**
 - `METODOS_DE_ENSINO.md` — roteiro executável de cada método, escala de rigor 1–4, as 5 posturas.
 - `GUIA_NOTEBOOKLM.md` — persona/método que também sobe como fonte no NotebookLM.
+- `artefatos/` — **como estruturar cada tipo de artefato**, um arquivo por tipo. Leia o
+  `artefatos/_index.md` (decomposição em subtópicos, matriz de granularidade, esqueleto do
+  `focus_prompt`) **mais** o arquivo do tipo que você vai gerar. Nunca gere de memória.
 - `REVISAO_IA.md` — protocolo da revisão: cloze, rigor, rating, calibração. **Toda escrita no `srs.db` sai por `scripts/revisar.py`** — nunca por SQL digitado na hora.
 - `templates/conceito.md` — modelo do nó do grafo de conhecimento. A anotação é **a explicação do aluno**, conferida na fonte (passo 5c da Fase 3).
 
@@ -121,12 +124,30 @@ Dispara com 10+ dias sem sessão **ou** backlog acima de 15 cards. A sessão de 
 
    **Abra o mapa conceitual junto** (`estudo/progresso/<materia>-mapa.md`) e mostre ao aluno **onde a etapa nova encaixa** no que ele já sabe. A amarra dita em voz alta desaparece; a amarra desenhada fica. Se o mapa já tem pontes apontando para esta etapa, é a hora de cobrá-las: *"lembra que o \<conceito X\> ia reaparecer aqui? É agora."*
 4. **Recorte a fonte.** Não suba o arquivo bruto completo (`estudo/documentos/<livro>.pdf`) como source. Extraia dele **só o conteúdo da etapa atual** e salve em `estudo/documentos/<materia>-<etapa>.md` — curado, no idioma do perfil, organizado pelos conceitos obrigatórios. É esse `.md` que vira source. Isso mantém os artefatos focados e impede a IA de vazar para etapas futuras.
+
+4b. **Decomponha a etapa em SUBTÓPICOS.** Este passo é o que define a granularidade de todo o material — faça-o **antes** de tocar no MCP.
+
+   Agrupe os conceitos obrigatórios da etapa em **3 a 6 subtópicos**, cada um passando nos quatro testes do `artefatos/_index.md` §2: autonomia (não depende de subtópico posterior), tamanho (cabe em ~6 min de explicação), testabilidade (gera pergunta de recall própria) e contraste (par que só existe em oposição fica **junto**, num subtópico só).
+
+   - **Etapa já aberta** → os subtópicos já estão no roadmap. **Use os que estão lá**, não invente outros: artefato gerado com um recorte e recall cobrado com outro não se encontram.
+   - **Primeira PREP da etapa** → proponha os subtópicos, grave no roadmap (campo `subtopicos` da etapa) e siga. Eles ficam congelados até a etapa fechar.
+
+   > **Por que fatiar.** Um artefato por etapa trata 5 conceitos como um só e entrega profundidade de nenhum. Segmentar em unidades autocontidas tem efeito consistente sobre transferência (g ≈ 0,32–0,36), e o engajamento em material audiovisual satura em ~6 minutos independentemente da duração — o que passa disso é produção jogada fora. Evidência em `artefatos/REFERENCIAS.md`.
+
 5. Via ferramentas do MCP `notebooklm`:
    - Garanta que existe um notebook da matéria; se não, crie-o.
    - `source_add` do `.md` recortado **+ `estudo/PERFIL.md` + `GUIA_NOTEBOOKLM.md`**. Esses dois últimos são as fontes comportamentais: garantem idioma, persona e escopo.
-   - `studio_create` para **cada artefato marcado como padrão no `PERFIL.md`**. Acompanhe com `studio_status`.
-   - Em **todo** `focus_prompt`, inclua obrigatoriamente: a lista de conceitos da etapa, a ordem de cobrir todos eles, e a proibição explícita de avançar para etapas futuras. Passe também o `language` do perfil.
-6. Avise o aluno: qual etapa, qual o 80/20, o que ficou pronto — e **entregue o prompt calibrado para o chat** do NotebookLM, com as regras do método configurado e a lista de conceitos obrigatórios, pronto para colar.
+   - **Faça a conta do volume antes de gerar:** `(tipos por subtópico × nº de subtópicos) + tipos por etapa`. Passou de 12, avise; passou de 20, **pare e pergunte** (`artefatos/_index.md` §4).
+   - **Gere na ordem: subtópico por subtópico, depois os integradores da etapa.**
+
+     | Para cada subtópico | Depois, uma vez por etapa |
+     |---|---|
+     | `audio`, `video`, `slide_deck`, `report`, `infographic`, `quiz`, `flashcards` — os que estiverem marcados como padrão no `PERFIL.md` | `mind_map`, `data_table` e o **quiz integrador** |
+
+     A granularidade **não é preferência do aluno** — está na matriz do `artefatos/_index.md` §3. O `PERFIL.md` decide *quais tipos*; a matriz decide *em que recorte*.
+   - **Monte cada `focus_prompt` com o esqueleto do `artefatos/_index.md` §5** (`[ESCOPO]` + `[IDIOMA]` + `[ALUNO]` + `[FORMATO]`), copiando o bloco `[FORMATO]` do arquivo do tipo. As três travas do `[ESCOPO]` são obrigatórias: a lista fechada de conceitos **do subtópico**, a proibição de citar os **outros subtópicos** e o que está fora de escopo da etapa, e o idioma. Passe o `language` do perfil também como parâmetro.
+   - Dispare os `studio_create` do subtópico em lote e só então varra com `studio_status`. Ao concluir, **renomeie** cada artefato: `studio_status(action="rename", ...)` no padrão `E<etapa>.<subtópico> · <Nome> — <Tipo>`. Com 15 artefatos na tela, nome é o que torna a lista utilizável.
+6. Avise o aluno: qual etapa, quais são os **subtópicos** e em que ordem consumir, qual o 80/20, o que ficou pronto — e **entregue o prompt calibrado para o chat** do NotebookLM, com as regras do método configurado e a lista de conceitos obrigatórios, pronto para colar. A lista sai **numerada por subtópico**, não agrupada por tipo: ele consome o subtópico 1 inteiro antes do 2.
 7. **Grave `fase2_iniciada_em: <hoje>` no ledger.** Sem isso o `status.py` não consegue detectar material abandonado, e a Fase 2 volta a morrer em silêncio.
 8. Convide o aluno a cronometrar: *"quando for começar, me diga **iniciar** — eu marco o tempo."*
 
@@ -139,6 +160,23 @@ Ele consome no NotebookLM (áudio no deslocamento, quiz, Q&A com citação). Voc
 - Se ele pedir um ritmo diferente hoje, passe as flags: `--bloco 50 --pausa 10 --blocos 3`.
 
 **Peça pouco no retorno.** Não cobre placar nem relatório: uma pergunta só — *"me diga um conceito que você não conseguiria explicar agora"*. O recall da Fase 3 extrai o resto. Pergunta menor, retorno mais provável.
+
+### Quem conduz o recall — pergunte, não decida
+
+Quando o aluno fechar a Fase 2, **antes de começar a Fase 3, ofereça as duas vias**:
+
+> *"Terminou de estudar. Quer fazer a validação comigo aqui, ou prefere que eu gere um prompt para você fazer com um agente externo e depois me trazer o resultado?"*
+
+**Faça a mesma pergunta quando ele pedir uma revisão** dos cards vencidos. Vale para os dois casos, e a escolha é sempre dele — não presuma.
+
+| Via | O que você faz |
+|---|---|
+| **Comigo** | Conduz o recall/revisão você mesmo, pelo protocolo da Fase 3 (ou do `REVISAO_IA.md`) |
+| **Agente externo** | Gera o prompt autossuficiente a partir de **[`templates/recall-externo.md`](../../../templates/recall-externo.md)**, salva em `estudo/atividades/`, e espera o bloco de resultado voltar |
+
+**O que não muda na via externa:** os cards precisam **existir no `srs.db` antes** (o resultado volta por `card_id`); a cota do recall e o portão N4 são os mesmos; a régua do rigor vai escrita dentro do prompt; e **você continua sendo quem grava** — `revisar.py revisar` card a card, ledger, mapa, grafo e badge. Delegar a condução não delega a contabilidade.
+
+**Confira o bloco antes de gravar.** `usou_dica=1` com rating acima de 2 é erro do agente externo: rebaixe para 2 e diga ao aluno que rebaixou e por quê. E decida o fechamento **pelo portão**, nunca pela média.
 
 ### Fase 3 — PROGRESS (você faz, escrevendo no workspace)
 
@@ -161,7 +199,7 @@ Ele consome no NotebookLM (áudio no deslocamento, quiz, Q&A com citação). Voc
 
    | Cota | Tipo | De onde sai |
    |---|---|---|
-   | 3 | `recall` | conceitos obrigatórios da etapa atual |
+   | 3 | `recall` | conceitos obrigatórios da etapa atual — **de subtópicos diferentes**, um cada |
    | 2 | `intercalado` | conceitos de etapas **já dominadas**, escolhidos pelo `conecta_com` do roadmap — formule exigindo que o aluno **decida qual dos dois se aplica** |
    | 1 | `sintese` | exige **combinar** a etapa atual com uma anterior. É o quebra-cabeça fechando |
    | 1 | `transferencia` | mesmo conceito, **superfície nova**: um caso de outro domínio, outro setor, outra escala |
@@ -253,6 +291,9 @@ Ele consome no NotebookLM (áudio no deslocamento, quiz, Q&A com citação). Voc
 - **Puxe o recall antes de dar a resposta.** Não entregue de bandeja.
 - **Respeite a trave de segurança do método** (`METODOS_DE_ENSINO.md` §1). Socrático sem progresso em 3 perguntas vira frustração — caia para o método de apoio.
 - **Nunca ultrapasse o escopo da etapa atual do roadmap**, nem em artefato, nem em explicação, nem em pergunta.
+- **Artefato é por subtópico, não por etapa.** Nunca gere um único artefato cobrindo a etapa inteira, salvo os integradores (`mind_map`, `data_table`, quiz integrador). A matriz de granularidade está em `artefatos/_index.md` §3 e não é configurável pelo aluno.
+- **Nunca gere artefato sem ler o arquivo do tipo em `artefatos/`.** O bloco `[FORMATO]` do `focus_prompt` sai de lá, literalmente. Formato improvisado na hora é como o deck vira lista de tópicos e o guia de estudo vira resumo — os dois formatos que a evidência reprova.
+- **Subtópico definido é subtópico congelado.** Enquanto a etapa estiver aberta, não redecomponha: o material já gerado e o recall precisam falar do mesmo recorte.
 - **Ledger com `Edit`** para mudanças pontuais no frontmatter; nunca reescreva o arquivo inteiro.
 - **`srs.db` é a fonte da verdade do progresso** — o mastery do NotebookLM é secundário/descartável.
 - No início de cada sessão: leia o ledger e retome exatamente de `retomar_em`, com os `pontos_fracos` em mente. Se houver revisão FSRS vencida, ela vem **antes** de conteúdo novo.

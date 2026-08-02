@@ -1,0 +1,59 @@
+flowchart LR
+
+    subgraph ANTES["ANTES — regras num arquivo so, 1 artefato por ETAPA"]
+        direction TB
+
+        subgraph AR["Onde moravam as regras"]
+            AR1["GUIA_NOTEBOOKLM.md + SKILL.md<br/>uma linha para TODOS os tipos:<br/>'inclua os conceitos da etapa,<br/>a proibicao de avancar e o idioma'"]
+            AR2["Formato de cada tipo:<br/>improvisado na hora<br/>sem regra, sem evidencia"]
+            AR1 --- AR2
+        end
+
+        A1["Etapa N do roadmap<br/>5 conceitos obrigatorios"]
+        A2["1 focus_prompt<br/>escopo = a etapa inteira"]
+        A3["studio_create<br/>1x por tipo do PERFIL"]
+        A4["1 audio de 20 min<br/>1 deck de 40 slides em topicos<br/>1 guia-apostila para reler<br/>1 quiz de 5 itens"]
+        A5["Atencao satura em ~6 min:<br/>o aluno consome o comeco<br/>e abandona o resto"]
+        A6["Erro no recall nao aponta material:<br/>os 5 conceitos estavam<br/>todos no mesmo arquivo"]
+
+        AR2 --> A1 --> A2 --> A3 --> A4 --> A5 --> A6
+    end
+
+    subgraph DEPOIS["DEPOIS — 1 arquivo de regra por tipo, 1 artefato por SUBTOPICO"]
+        direction TB
+
+        subgraph DR["Onde moram as regras — artefatos/"]
+            DR1["_index.md<br/>decomposicao em subtopicos<br/>matriz de granularidade<br/>esqueleto do focus_prompt"]
+            DR2["audio.md · video.md · slide_deck.md<br/>report.md · infographic.md<br/>quiz.md · flashcards.md<br/>mind_map.md · data_table.md"]
+            DR3["REFERENCIAS.md<br/>a evidencia de cada regra"]
+            DR1 --- DR2 --- DR3
+        end
+
+        D1["Etapa N do roadmap<br/>5 conceitos obrigatorios"]
+        D2{"DECOMPOE em 3 a 6 subtopicos<br/>autonomo · cabe em ~6 min<br/>testavel sozinho<br/>par contrastivo fica junto"}
+        D3["Grava em roadmap.subtopicos<br/>congelado ate a etapa fechar"]
+        D4["Conta do volume<br/>tipos x subtopicos"]
+
+        D5["POR SUBTOPICO<br/>focus_prompt = ESCOPO do subtopico<br/>+ IDIOMA + ALUNO<br/>+ FORMATO copiado de artefatos/tipo.md"]
+        D6["audio 5-10 min · video 4-6 min<br/>deck 6-12 slides assercao-evidencia<br/>guia com perguntas · quiz 5-8 itens<br/>flashcards 1 fato por card"]
+
+        D7["INTEGRADORES DA ETAPA<br/>gerados por ultimo"]
+        D8["mind_map da etapa<br/>data_table comparativa<br/>quiz integrador 10-12 itens"]
+
+        D9["rename<br/>E-n.m · subtopico — tipo"]
+        D10["Erro no recall aponta o subtopico,<br/>que aponta o guia, o audio<br/>e o deck exatos"]
+
+        DR2 --> D1 --> D2 --> D3 --> D4 --> D5 --> D6 --> D7 --> D8 --> D9 --> D10
+    end
+
+    A6 -.->|"segmentacao g~0,33 · saturacao em 6 min<br/>assercao-evidencia · distratores competitivos<br/>informacao minima · casos contrastantes"| D1
+
+    classDef ruim fill:#8C2F1F,stroke:#6d2417,color:#fff;
+    classDef bom fill:#2ecc71,stroke:#27ae60,color:#fff;
+    classDef decisao fill:#e67e22,stroke:#d35400,color:#fff;
+    classDef regra fill:#4A5E86,stroke:#33456b,color:#fff;
+
+    class A4,A5,A6,AR2 ruim
+    class D6,D8,D10 bom
+    class D2 decisao
+    class AR1,DR1,DR2,DR3 regra

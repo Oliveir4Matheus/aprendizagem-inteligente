@@ -314,6 +314,7 @@ Regras derivadas, todas em `AGENTS.md`:
 | `.agents/mcp_config.json` | MCP com privilégio mínimo | runtime do agente |
 | `.agents/mcp_pin.json` | Commit auditado do MCP + histórico de atualizações | `setup.py`, `mcp_update.py` |
 | `scripts/` | Ver [3.4](#34-os-scripts) | agente e humano |
+| `artefatos/` | Regras de formato dos artefatos do NotebookLM — um arquivo por tipo + índice + referências | agente lê antes de gerar |
 | `templates/` | Modelos copiados para `estudo/` no setup | `setup.py` |
 | `docs/` | Diagramas em PNG, avaliações, este manual | humano |
 
@@ -568,6 +569,25 @@ artefatos, ritmo de foco. Detalhe em `COOKBOOK.md` Parte 0.
 > fases futuras. Os conceitos da etapa atual entram no `focus_prompt` de **todo** artefato, com
 > proibição explícita de avançar. É a solução para um problema observado, não teórico.
 
+> **Por que o material é por subtópico e não por etapa.** Um artefato para a etapa inteira trata
+> cinco conceitos como se fossem um: 20 minutos de áudio com 3 minutos em cada coisa, deck de 40
+> slides, quiz com uma pergunta por conceito. Duas evidências desmontam esse formato. A
+> **segmentação** — material fatiado em unidades autocontidas — tem efeito consistente sobre
+> transferência (g ≈ 0,32–0,36 em meta-análise de 56 estudos), e o efeito é **maior justamente em
+> tratamentos curtos**. E o **engajamento** em material audiovisual satura em torno de 6 minutos
+> independentemente da duração total: acima de 12 minutos, o aluno médio consome menos de um
+> quarto. O que passa disso é produção jogada fora.
+>
+> Há um ganho de diagnóstico junto: o subtópico é a **menor unidade que se cobra sozinha** no
+> recall da Fase 3. Quando o artefato mistura cinco conceitos, o erro do aluno não aponta para
+> nada — não dá para saber qual material reabrir. Com um artefato por subtópico, erro no card
+> aponta para o subtópico, que aponta para o guia, o áudio e o deck exatos.
+>
+> A exceção são os **integradores** (`mind_map`, `data_table`, quiz integrador): eles existem
+> para mostrar como os subtópicos se ligam, e fatiá-los destruiria a única coisa que produzem.
+> Um mapa mental de um conceito só é um retângulo. Regras e evidência completas em
+> `artefatos/` — um arquivo por tipo, com o `[FORMATO]` que o agente copia para o `focus_prompt`.
+
 ## 4.3 O loop de 3 fases
 
 ### Passo zero (sempre)
@@ -584,9 +604,13 @@ Siga o `próximo passo` que ele imprimir. Não improvise por onde começar quand
 2. Lê roadmap: conceitos obrigatórios, fora de escopo, `conecta_com`, `prepara_para`.
 3. Define o 80/20 e **abre amarrando no que já foi dominado**.
 4. **Recorta a fonte** → `estudo/documentos/<materia>-<etapa>.md`. Não sobe o PDF inteiro.
+4b. **Decompõe a etapa em 3 a 6 subtópicos** e grava no roadmap (congelados até a etapa fechar).
 5. Via MCP: garante notebook → `source_add` (recorte + `PERFIL.md` + `GUIA_NOTEBOOKLM.md`) →
-   `studio_create` de cada artefato padrão, com os conceitos da etapa no `focus_prompt`.
-6. Avisa o aluno e entrega o **prompt calibrado** para o chat.
+   `studio_create` **por subtópico** de cada tipo padrão, com os conceitos **daquele subtópico**
+   no `focus_prompt` e o bloco de formato copiado de `artefatos/<tipo>.md` → depois, os
+   integradores da etapa (`mind_map`, `data_table`, quiz integrador) → renomeia tudo.
+6. Avisa o aluno, **dá a ordem de consumo por subtópico** e entrega o **prompt calibrado** para
+   o chat.
 7. **Grava `fase2_iniciada_em` no ledger.**
 8. Convida a cronometrar: *"quando for começar, me diga **iniciar**"*.
 
@@ -827,6 +851,49 @@ banco registra: quantos registros novos entraram em `review_log` hoje, se alcan�
 perfil, se as cotas de `tipo_item` foram cumpridas, se alguma etapa virou `dominada` sem os 2 itens
 `portao`.
 
+### L4 · O erro é registrado como nota, não como diagnóstico — e o raciocínio se perde
+
+**Status: em backlog.** Ideia levantada e validada contra a literatura em 2026-07-29; implementação
+adiada por decisão do aluno. Este registro existe para a pesquisa não precisar ser refeita.
+
+**O quê.** Hoje o erro deixa três rastros: o `rating` no `review_log`, uma linha em `pontos_fracos`
+no ledger, e um `⚠️` no nó do grafo. Nenhum dos três guarda **o raciocínio que levou ao erro** — o
+*porquê* daquela resposta ter parecido certa. E `pontos_fracos` é prosa num ledger: não dá para
+contar, filtrar nem medir se a lacuna foi tampada.
+
+**Por que importa.** É a única recomendação da revisão de Metcalfe [[21]](#r21) que o sistema ainda
+não implementa, e ela é dita no abstract: *"Corrective feedback, including **analysis of the
+reasoning leading up to the mistake**, is crucial."* Registrar esse raciocínio é também um prompt de
+**auto-explicação**, cuja meta-análise mede **g = 0,55** em 69 tamanhos de efeito [[22]](#r22) — na
+mesma faixa das alavancas que este sistema já usa. E feedback **elaborado** supera a simples
+verificação de acerto/erro [[23]](#r23).
+
+**O desenho que a evidência sugere** (e onde ele difere da versão intuitiva):
+
+| Decisão | Por quê |
+|---|---|
+| Taxonomia **fechada** + texto livre, não só texto livre | O objetivo é medir se a lacuna fechou. Prosa não agrega; a categoria conta, o texto ensina. Precisa dos dois. |
+| A taxonomia separa **comissão relacionada** de **chute sem base** | Erro de comissão semanticamente ligado ao alvo melhora a recuperação posterior; palpite sem relação **não traz benefício** [[21]](#r21). Logo o chute pede **reensinar**, não reagendar — remédios opostos. |
+| Fechar a lacuna **só por recuperação espaçada**, nunca por declaração | O aluno é metacognitivamente cego ao próprio ganho: mesmo após 20% de vantagem medida, participantes acreditavam que a condição sem erro tinha sido melhor [[21]](#r21). A sensação de "já sei isso" não serve de critério. |
+| Erro de **confiança alta** exige mais evidência para fechar | É o mais corrigível agora (hipercorreção) **e** o que mais reaparece depois: o efeito persiste uma semana, mas o erro de alta confiança volta quando a resposta correta é esquecida [[24]](#r24). O sistema já registra `confianca` — o dado existe. |
+| Anotar **depois** de revelar a resposta | Feedback não precisa ser imediato: atrasá-lo até uma semana deu resultado equivalente em universitários [[21]](#r21). Anotar durante a tentativa só somaria carga sem ganho. |
+
+**O que a evidência NÃO sustenta.** A prática em si — "caderno de erros", *after-action review* — tem
+pouca pesquisa experimental direta. Metcalfe é explícita sobre o AAR: *"there is little experimental
+research on this method, there appears, nevertheless, to be considerable consensus about its
+efficacy."* O que é sólido são os **mecanismos** (auto-explicação, feedback elaborado, mirar o erro
+confiante), não o artefato. Consequência de projeto: se o registro não gerar uma **próxima pergunta
+melhor**, é engajamento, não aprendizado — e aí não vale implementar. Material promocional circulando
+com números tipo "melhora até 18%" não tem fonte rastreável e não foi usado como base.
+
+**Como atacar quando sair do backlog.** Tabela nova no `srs.db` (uma linha por lacuna, com
+`card_id`, tipo, nota, `confianca` do erro que a originou, contador de acertos limpos e
+`reaberturas`), o movimento dessas linhas acoplado à **mesma transação** de `revisar.py revisar`, uma
+fila `pendentes --lacunas` para a revisão focada, e a contagem de lacunas abertas no nó do grafo. O
+esqueleto chegou a ser escrito e revertido em 2026-07-29; a lógica não-óbvia é que acerto no **mesmo
+dia** não conta (não é evidência espaçada) e que erro **zera** a contagem, senão alternar acerto e
+erro fecharia qualquer coisa.
+
 ## 7.2 Onde os dados existem e ninguém os lê
 
 **Este é o padrão mais produtivo para procurar melhorias.** O sistema já coleta o necessário para
@@ -986,6 +1053,14 @@ Nada de análise de código responde estas. Elas exigem **seis a oito semanas de
 <a name="r19"></a>**[19]** Rogowsky, B. A., Calhoun, B. M., & Tallal, P. (2015). *Matching Learning Style to Instructional Method.* JEP, 107(1). — [PDF](https://www.apa.org/pubs/journals/features/edu-a0037478.pdf)
 
 <a name="r20"></a>**[20]** Kalyuga, S. et al. (2003). *The Expertise Reversal Effect.* Educational Psychologist, 38(1).
+
+<a name="r21"></a>**[21]** Metcalfe, J. (2017). *Learning from Errors.* Annual Review of Psychology, 68, 465–489. — [link](https://www.annualreviews.org/content/journals/10.1146/annurev-psych-010416-044022) · [PDF](https://files.eric.ed.gov/fulltext/ED574569.pdf) — revisão que reúne hipercorreção, erro de comissão × omissão, exigências do feedback e a cegueira metacognitiva ao benefício de errar.
+
+<a name="r22"></a>**[22]** Bisra, K., Liu, Q., Nesbit, J. C., Salimi, F., & Winne, P. H. (2018). *Inducing Self-Explanation: a Meta-Analysis.* Educational Psychology Review, 30. — [link](https://link.springer.com/article/10.1007/s10648-018-9434-x) — g = 0,55 sobre 69 tamanhos de efeito.
+
+<a name="r23"></a>**[23]** Shute, V. J. (2008). *Focus on Formative Feedback.* Review of Educational Research, 78(1). — [link](https://journals.sagepub.com/doi/10.3102/0034654307313795) — feedback elaborado supera a verificação simples de acerto/erro.
+
+<a name="r24"></a>**[24]** Butler, A. C., Fazio, L. K., & Marsh, E. J. (2011). *The hypercorrection effect persists over a week, but high-confidence errors return.* Psychonomic Bulletin & Review, 18(6), 1238–1244. — [link](https://link.springer.com/article/10.3758/s13423-011-0173-y)
 
 # Apêndice C — Comandos
 

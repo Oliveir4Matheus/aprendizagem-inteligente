@@ -233,11 +233,25 @@ classDiagram
         +String tipo
         +String origem
     }
+    class Subtopico {
+        +int ordem
+        +String nome
+        +List~String~ conceitos
+        +congeladoEnquantoEtapaAberta()
+    }
     class Artefato {
         +String tipo
+        +String granularidade
+        +String subtopico
         +String focusPrompt
         +String idioma
         +String status
+    }
+    class RegraDeArtefato {
+        +String arquivo
+        +String granularidade
+        +String papel
+        +String blocoFormato
     }
 
     class Conceito {
@@ -325,7 +339,10 @@ classDiagram
     MCPNotebookLM --> Notebook
     Notebook "1" *-- "1..*" Source
     Notebook "1" *-- "0..*" Artefato
-    Etapa ..> Artefato : conceitos viram focusPrompt
+    Etapa "1" *-- "3..6" Subtopico
+    Subtopico ..> Artefato : conceitos viram o ESCOPO do focusPrompt
+    Etapa ..> Artefato : só os integradores (mind_map, data_table, quiz)
+    RegraDeArtefato ..> Artefato : define o bloco FORMATO
 
     Grafo --> Conceito : lê a pasta
     Grafo --> Revisar : retrievability(FSRS)
@@ -340,9 +357,14 @@ classDiagram
     AuditorMCP --> MCPNotebookLM : pina o commit
 ```
 
-> **A relação que segura tudo:** `Etapa ..> Artefato`. Os conceitos obrigatórios da etapa
-> atual entram no `focusPrompt` de **todo** artefato gerado. É esse trilho que impede o
-> NotebookLM de avançar para conteúdo de etapas futuras.
+> **A relação que segura tudo:** `Subtopico ..> Artefato`. Os conceitos obrigatórios entram no
+> `focusPrompt` de **todo** artefato gerado — mas na granularidade do **subtópico**, não da
+> etapa. É esse trilho que impede o NotebookLM de avançar para etapas futuras **e** que impede
+> um subtópico de invadir o outro. `Etapa ..> Artefato` sobrou só para os integradores
+> (`mind_map`, `data_table`, quiz integrador), que existem justamente para religar as partes.
+>
+> `RegraDeArtefato` é o diretório `artefatos/`: um arquivo por tipo, de onde sai o bloco
+> `[FORMATO]` do `focusPrompt`. O formato nunca é improvisado na hora de gerar.
 
 ---
 
@@ -400,17 +422,26 @@ sequenceDiagram
 
     Note over M,WS: FASE 1 — PREP
     M->>WS: conceitosDaEtapaAtual() do roadmap
+    M->>WS: decompoe em 3-6 subtopicos (grava no roadmap)
     M->>WS: recorta a fonte -> documentos/<materia>-<etapa>.md
     M->>MCP: notebook_create / notebook_get
     MCP->>NLM: cria ou abre o notebook
     M->>MCP: source_add(recorte + PERFIL.md + GUIA_NOTEBOOKLM.md)
-    loop para cada artefato padrão do PERFIL
-        M->>MCP: studio_create(tipo, focusPrompt=conceitos, idioma)
-        MCP->>NLM: gera o artefato
-        M->>MCP: studio_status(id)
+    loop para cada SUBTOPICO
+        loop para cada tipo por subtopico do PERFIL
+            M->>WS: le artefatos/<tipo>.md -> bloco [FORMATO]
+            M->>MCP: studio_create(tipo, focusPrompt=conceitos DO SUBTOPICO, idioma)
+            MCP->>NLM: gera o artefato
+        end
+        M->>MCP: studio_status(lote do subtopico)
+        MCP-->>M: concluído
+        M->>MCP: rename -> "E<n>.<m> · <subtopico> — <tipo>"
+    end
+    loop integradores da etapa
+        M->>MCP: studio_create(mind_map / data_table / quiz integrador)
         MCP-->>M: concluído
     end
-    M->>Aluno: etapa, 80/20, artefatos prontos + prompt calibrado
+    M->>Aluno: etapa, subtopicos na ordem, 80/20, artefatos + prompt calibrado
     M->>WS: grava fase2_iniciada_em
 
     Note over Aluno,NLM: FASE 2 — STUDY (o agente não conduz, mas não some)
@@ -516,9 +547,15 @@ flowchart TD
     R1[FASE 1 — PREP] --> P1[Extrai conceitos da etapa<br/>+ conecta_com + prepara_para]
     P1 --> P1b[Amarra no que já foi dominado<br/>antes do conteúdo novo]
     P1b --> P2[Recorta a fonte para<br/>documentos/materia-etapa.md]
-    P2 --> P3[source_add: recorte + PERFIL + GUIA]
-    P3 --> P4[studio_create de cada artefato<br/>focusPrompt = conceitos da etapa]
-    P4 --> P5[/Avisa o aluno + prompt calibrado<br/>grava fase2_iniciada_em/]
+    P2 --> P2b[/DECOMPÕE a etapa em 3-6 subtópicos<br/>autonomia · ~6 min · testável · par contrastivo junto<br/>grava no roadmap e congela/]
+    P2b --> P3[source_add: recorte + PERFIL + GUIA]
+    P3 --> P3b{Conta do volume<br/>tipos x subtópicos}
+    P3b -- "> 20" --> P3c[Pergunta ao aluno<br/>antes de gerar]
+    P3c --> P4
+    P3b -- "<= 20" --> P4[studio_create POR SUBTÓPICO<br/>bloco FORMATO vem de artefatos/tipo.md<br/>focusPrompt = conceitos DO SUBTÓPICO]
+    P4 --> P4b[Integradores da etapa<br/>mind_map · data_table · quiz integrador]
+    P4b --> P4c[rename: E-n.m · subtópico — tipo]
+    P4c --> P5[/Avisa o aluno + ordem de consumo<br/>+ prompt calibrado<br/>grava fase2_iniciada_em/]
 
     P5 --> F2[FASE 2 — STUDY<br/>aluno consome no NotebookLM]
     F2 --> T1{Aluno disse<br/>iniciar?}
@@ -565,6 +602,86 @@ flowchart TD
 
 > **Por que o passo zero é um script e não uma instrução.** O gatilho da Fase 2 abandonada e o modo reentrada são exatamente o tipo de verificação que um agente com o contexto cheio deixa de fazer — e a falha é silenciosa, porque ninguém sente falta de uma checagem que não aconteceu. Tirando a decisão da memória do agente e colocando numa saída de terminal, ela passa a acontecer mesmo quando ele está distraído.
 
+### 4.3 Geração de material — antes e depois da granularidade por subtópico
+
+Duas mudanças que só fazem sentido juntas: **onde moram as regras** de cada tipo de artefato, e
+**em que recorte** o material é gerado. Antes, uma linha genérica valia para todos os tipos e um
+artefato cobria a etapa inteira. Depois, cada tipo tem seu arquivo em `artefatos/` e cada
+subtópico tem seu conjunto.
+
+```mermaid
+flowchart LR
+
+    subgraph ANTES["ANTES — regras num arquivo so, 1 artefato por ETAPA"]
+        direction TB
+
+        subgraph AR["Onde moravam as regras"]
+            AR1["GUIA_NOTEBOOKLM.md + SKILL.md<br/>uma linha para TODOS os tipos:<br/>'inclua os conceitos da etapa,<br/>a proibicao de avancar e o idioma'"]
+            AR2["Formato de cada tipo:<br/>improvisado na hora<br/>sem regra, sem evidencia"]
+            AR1 --- AR2
+        end
+
+        A1["Etapa N do roadmap<br/>5 conceitos obrigatorios"]
+        A2["1 focus_prompt<br/>escopo = a etapa inteira"]
+        A3["studio_create<br/>1x por tipo do PERFIL"]
+        A4["1 audio de 20 min<br/>1 deck de 40 slides em topicos<br/>1 guia-apostila para reler<br/>1 quiz de 5 itens"]
+        A5["Atencao satura em ~6 min:<br/>o aluno consome o comeco<br/>e abandona o resto"]
+        A6["Erro no recall nao aponta material:<br/>os 5 conceitos estavam<br/>todos no mesmo arquivo"]
+
+        AR2 --> A1 --> A2 --> A3 --> A4 --> A5 --> A6
+    end
+
+    subgraph DEPOIS["DEPOIS — 1 arquivo de regra por tipo, 1 artefato por SUBTOPICO"]
+        direction TB
+
+        subgraph DR["Onde moram as regras — artefatos/"]
+            DR1["_index.md<br/>decomposicao em subtopicos<br/>matriz de granularidade<br/>esqueleto do focus_prompt"]
+            DR2["audio.md · video.md · slide_deck.md<br/>report.md · infographic.md<br/>quiz.md · flashcards.md<br/>mind_map.md · data_table.md"]
+            DR3["REFERENCIAS.md<br/>a evidencia de cada regra"]
+            DR1 --- DR2 --- DR3
+        end
+
+        D1["Etapa N do roadmap<br/>5 conceitos obrigatorios"]
+        D2{"DECOMPOE em 3 a 6 subtopicos<br/>autonomo · cabe em ~6 min<br/>testavel sozinho<br/>par contrastivo fica junto"}
+        D3["Grava em roadmap.subtopicos<br/>congelado ate a etapa fechar"]
+        D4["Conta do volume<br/>tipos x subtopicos"]
+
+        D5["POR SUBTOPICO<br/>focus_prompt = ESCOPO do subtopico<br/>+ IDIOMA + ALUNO<br/>+ FORMATO copiado de artefatos/tipo.md"]
+        D6["audio 5-10 min · video 4-6 min<br/>deck 6-12 slides assercao-evidencia<br/>guia com perguntas · quiz 5-8 itens<br/>flashcards 1 fato por card"]
+
+        D7["INTEGRADORES DA ETAPA<br/>gerados por ultimo"]
+        D8["mind_map da etapa<br/>data_table comparativa<br/>quiz integrador 10-12 itens"]
+
+        D9["rename<br/>E-n.m · subtopico — tipo"]
+        D10["Erro no recall aponta o subtopico,<br/>que aponta o guia, o audio<br/>e o deck exatos"]
+
+        DR2 --> D1 --> D2 --> D3 --> D4 --> D5 --> D6 --> D7 --> D8 --> D9 --> D10
+    end
+
+    A6 -.->|"segmentacao g~0,33 · saturacao em 6 min<br/>assercao-evidencia · distratores competitivos<br/>informacao minima · casos contrastantes"| D1
+
+    classDef ruim fill:#8C2F1F,stroke:#6d2417,color:#fff;
+    classDef bom fill:#2ecc71,stroke:#27ae60,color:#fff;
+    classDef decisao fill:#e67e22,stroke:#d35400,color:#fff;
+    classDef regra fill:#4A5E86,stroke:#33456b,color:#fff;
+
+    class A4,A5,A6,AR2 ruim
+    class D6,D8,D10 bom
+    class D2 decisao
+    class AR1,DR1,DR2,DR3 regra
+```
+
+**O que muda, em uma tabela:**
+
+| | Antes | Depois |
+|---|---|---|
+| Regras de formato | Uma linha genérica para todos os tipos | Um arquivo por tipo em `artefatos/`, com evidência |
+| Unidade de geração | A etapa | O **subtópico** (3 a 6 por etapa) |
+| Escopo do `focus_prompt` | Conceitos da etapa | Conceitos **do subtópico** + proibição de citar os outros |
+| Artefatos integradores | Não existiam como categoria | `mind_map`, `data_table` e quiz integrador, por etapa, gerados por último |
+| Controle de volume | Nenhum | Conta explícita, aviso acima de 12, pergunta acima de 20 |
+| Rastreabilidade do erro | Erro aponta para a etapa | Erro aponta para o subtópico → guia, áudio e deck exatos |
+
 ---
 
 ## 5. O loop de 3 fases (resumo textual)
@@ -587,12 +704,20 @@ flowchart TD
       → estudo/documentos/<materia>-<etapa>.md
       │
       ▼
-  garante notebook → sobe o recorte + PERFIL.md + GUIA_NOTEBOOKLM.md
-      → gera os artefatos do conjunto padrão do PERFIL
-        (todo focus_prompt leva a lista de conceitos + a proibição de avançar)
+  decompõe a etapa em 3 a 6 SUBTÓPICOS  → grava no roadmap, congela até fechar
+      (autônomo · cabe em ~6 min · testável sozinho · par contrastivo fica junto)
       │
       ▼
-  avisa: "etapa X, o 80/20 é Y, material pronto" + prompt calibrado pro chat
+  garante notebook → sobe o recorte + PERFIL.md + GUIA_NOTEBOOKLM.md
+      → PARA CADA SUBTÓPICO: gera os tipos "por subtópico" do PERFIL
+        (formato de cada tipo vem de artefatos/<tipo>.md, literalmente)
+        (todo focus_prompt leva os conceitos DO SUBTÓPICO + a proibição de citar
+         os outros subtópicos e as etapas futuras + o idioma)
+      → DEPOIS, uma vez: mind_map + data_table + quiz integrador da etapa
+      → renomeia tudo: "E<n>.<m> · <subtópico> — <tipo>"
+      │
+      ▼
+  avisa: "etapa X, subtópicos 1..N nesta ordem, o 80/20 é Y" + prompt calibrado pro chat
 
   FASE 2 — STUDY  (VOCÊ faz)
   ─────────────────────────────────────────────────────────────

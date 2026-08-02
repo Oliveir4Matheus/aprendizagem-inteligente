@@ -80,7 +80,7 @@ O tutor não é genérico — ele é **configurado no onboarding**:
 | **Método de ensino** (6 opções) | socrático, instrução direta, exemplos trabalhados, baseado em problema, descoberta guiada ou mastery — cada um vira um roteiro que o agente executa passo a passo |
 | **Postura** (5 opções) | inferida de 4 cenários, não de autodiagnóstico |
 | **Rigor** (4 níveis) | Webb DOK × standards-based grading: controla a profundidade da pergunta, o tamanho da lacuna no recall e a severidade do rating |
-| **Idioma e artefatos** | o que o NotebookLM sempre gera, e em que língua |
+| **Idioma e artefatos** | o que o NotebookLM sempre gera **para cada subtópico**, e em que língua |
 | **Ritmo** | bloco de foco, pausa curta e pausa longa — 25/5 é o padrão, não a regra |
 
 Catálogo completo em [`METODOS_DE_ENSINO.md`](METODOS_DE_ENSINO.md).
@@ -127,6 +127,8 @@ aprendizagem-inteligente/
 │   │   ├── mcp_config.json          ← MCP com privilégio mínimo
 │   │   ├── mcp_pin.json             ← commit auditado do MCP
 │   │   └── skills/professor/SKILL.md ← o cérebro (persona + loop 3 fases)
+│   ├── artefatos/             ← como estruturar cada tipo de artefato (1 arquivo por tipo)
+│   │                             _index.md (subtópicos + granularidade) · REFERENCIAS.md
 │   ├── scripts/               ← status.py · revisar.py · grafo.py · sessao.py
 │   │                             setup.py · mcp_update.py · mnemo.py · workspace.py
 │   │                             test_revisar.py · test_grafo.py (regressão)

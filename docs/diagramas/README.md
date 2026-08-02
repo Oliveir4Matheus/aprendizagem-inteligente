@@ -9,6 +9,7 @@ Os `.mmd` ao lado são as fontes extraídas — o original continua sendo o `ARQ
 | `02-sequencia.png` | Uma sessão de estudo do "oi" ao card agendado |
 | `03-atividade-instalacao.png` | Instalação e configuração — roda uma vez por máquina |
 | `04-atividade-ciclo-de-estudo.png` | O ciclo de estudo — roda toda sessão |
+| `05-antes-depois-artefatos.png` | Geração de material: antes (1 artefato por etapa, regras num arquivo só) × depois (1 por subtópico, `artefatos/<tipo>.md`) |
 
 ## Como regerar
 

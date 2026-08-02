@@ -46,17 +46,26 @@ sequenceDiagram
 
     Note over M,WS: FASE 1 — PREP
     M->>WS: conceitosDaEtapaAtual() do roadmap
+    M->>WS: decompoe em 3-6 subtopicos (grava no roadmap)
     M->>WS: recorta a fonte -> documentos/<materia>-<etapa>.md
     M->>MCP: notebook_create / notebook_get
     MCP->>NLM: cria ou abre o notebook
     M->>MCP: source_add(recorte + PERFIL.md + GUIA_NOTEBOOKLM.md)
-    loop para cada artefato padrão do PERFIL
-        M->>MCP: studio_create(tipo, focusPrompt=conceitos, idioma)
-        MCP->>NLM: gera o artefato
-        M->>MCP: studio_status(id)
+    loop para cada SUBTOPICO
+        loop para cada tipo por subtopico do PERFIL
+            M->>WS: le artefatos/<tipo>.md -> bloco [FORMATO]
+            M->>MCP: studio_create(tipo, focusPrompt=conceitos DO SUBTOPICO, idioma)
+            MCP->>NLM: gera o artefato
+        end
+        M->>MCP: studio_status(lote do subtopico)
+        MCP-->>M: concluído
+        M->>MCP: rename -> "E<n>.<m> · <subtopico> — <tipo>"
+    end
+    loop integradores da etapa
+        M->>MCP: studio_create(mind_map / data_table / quiz integrador)
         MCP-->>M: concluído
     end
-    M->>Aluno: etapa, 80/20, artefatos prontos + prompt calibrado
+    M->>Aluno: etapa, subtopicos na ordem, 80/20, artefatos + prompt calibrado
     M->>WS: grava fase2_iniciada_em
 
     Note over Aluno,NLM: FASE 2 — STUDY (o agente não conduz, mas não some)

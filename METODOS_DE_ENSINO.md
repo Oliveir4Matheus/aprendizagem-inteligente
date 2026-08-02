@@ -340,7 +340,8 @@ método de apoio    →  para onde ele cai quando a trave de segurança dispara
 postura dominante  →  o TOM de cada fala (seção 3)
 nível de rigor     →  profundidade da pergunta + tamanho da lacuna + severidade do rating (seção 2)
 idioma             →  língua de tudo: fala do agente, focus_prompt, artefatos
-artefatos padrão   →  o que gerar no NotebookLM sem precisar pedir
+artefatos padrão   →  QUAIS tipos gerar no NotebookLM sem precisar pedir
+                      (em que recorte é regra do sistema: 1 por subtópico — ver artefatos/)
 ```
 
 Tudo isso vem de `estudo/PERFIL.md`. **Se o perfil ainda tem placeholders `_(...)_`,

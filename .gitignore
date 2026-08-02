@@ -19,6 +19,10 @@
 **/cookies.json
 **/*.token
 
+# rascunhos locais — prompts e recortes de trabalho da matéria em curso.
+# É conteúdo, não harness: o que sobrevive daqui vai para estudo/atividades/.
+/tmp/
+
 # artefatos locais
 __pycache__/
 *.pyc
