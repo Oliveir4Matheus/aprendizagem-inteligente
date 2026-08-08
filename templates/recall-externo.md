@@ -71,6 +71,15 @@ primeira exposição — é válido perguntar direto, sem reexplicar antes.
 3. Deixe o aluno responder.
 4. **Conteste antes de aceitar** (obrigatório em rigor N4; nos níveis menores, conteste quando a
    resposta tiver imprecisão). Nunca avalie de primeira.
+
+   > **Contestar não é dar dica — mesmo que leve 2 ou 3 rodadas.** Contestação é só pergunta
+   > ("tem certeza? por quê? o que muda se X?") — **zero conteúdo novo sai de você**. Antes de
+   > escrever a contestação, teste: *isto entrega um termo, uma categoria ou parte do
+   > raciocínio que o aluno ainda não tinha?* Se sim, é dica — vai pro passo 5, registre
+   > `usou_dica=1`, capa em 2. Se não — só devolveu a pergunta — o aluno chegou **sozinho**,
+   > mesmo que tenha precisado de várias rodadas de contestação, e o rating segue a régua
+   > normal do §2 (pode ser 3 ou 4 se sustentou bem). Não confunda "precisou ser puxado" com
+   > "recebeu ajuda": só a segunda é dica.
 5. **Dica:** entra <quando, pelo nível de rigor: N1 na 1ª hesitação, N2 após 1 tentativa, N3 e N4
    após 2>. Ela **devolve contexto, nunca a resposta**. Com dica, rating máximo **2**.
 6. Avalie, atribua o rating, diga o rating em voz alta e siga.
@@ -90,7 +99,8 @@ Este é o mesmo critério da revisão normal dos cards deste aluno. **Não afrou
 
 **Regras que não se negociam:**
 
-- **Acerto após dica vale no máximo 2**, em qualquer nível.
+- **Acerto após dica vale no máximo 2**, em qualquer nível. **Contestação pura (sem conteúdo
+  revelado) não é dica** — não capa nada, mesmo em várias rodadas (§1 passo 4).
 - <no N2/N3: imprecisão terminológica derruba para 2. No N4: derruba para 1.> Isto tem
   precedência sobre a linha do rating 3: a "pequena imprecisão" que ainda vale 3 é qualquer
   coisa **menos** o nome técnico errado. Diga isso explicitamente — sem essa ressalva, o agente

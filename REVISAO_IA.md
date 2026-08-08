@@ -173,6 +173,8 @@ Guarde para passar em `--confianca` como **2 / 1 / 0**. Este passo não é forma
 
 O aluno completa a lacuna com as próprias palavras.
 
+**Contestação (obrigatória em N4):** antes de aceitar a resposta, devolva uma pergunta que force reconsiderar ("tem certeza? por quê? o que muda se X?") — **zero conteúdo novo**, só pergunta. Contestação não é dica: mesmo que o aluno precise de várias rodadas para sustentar ou completar a resposta, se nada foi revelado por você, ele chegou sozinho e a régua normal do rating vale (pode ser 3 ou 4). Só vira dica no momento em que você entrega um termo, uma categoria ou parte do raciocínio.
+
 **Dica:** existe em todos os níveis. Ela **devolve contexto** (rebaixa a questão um nível: N4→N3, N3→N2, N2→N1) e nunca entrega a resposta. Quando entra: N1 ao primeiro sinal de hesitação, N2 após 1 tentativa, N3 e N4 após 2.
 
 ### 4. Avaliar e atribuir rating
